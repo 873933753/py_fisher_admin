@@ -1,0 +1,36 @@
+{
+  "auth": {
+    "login": "Login",
+    "register": "Register",
+    "codeLogin": "Code Login",
+    "qrcodeLogin": "Qr Code Login",
+    "forgetPassword": "Forget Password",
+    "profile": "Profile"
+  },
+  "dashboard": {
+    "workspace": "Workspace"
+  },
+  "mall": {
+    "user": "User Management",
+    "homeTitle": "Home Management",
+    "banner": "Banner Management",
+    "aboutUs": "About Us",
+    "productTitle": "Product Management",
+    "category": "Category Management",
+    "coupon": "Coupon Management",
+    "productList": "Product List",
+    "productCreate": "Create Product",
+    "productEdit": "Edit Product",
+    "orderTitle": "Order Management",
+    "orderList": "Order List",
+    "orderDetail": "Order Detail",
+    "orderFlowList": "Order Flow List",
+    "paypalTransactionList": "PayPal Transaction List",
+    "productReviewList": "Product Reviews"
+  },
+  "system": {
+    "profile": "Profile",
+    "title": "System",
+    "user": "User Management"
+  }
+}

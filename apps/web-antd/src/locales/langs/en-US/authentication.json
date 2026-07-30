@@ -1,0 +1,7 @@
+{
+  "phoneNumber": "Phone Number",
+  "phoneNumberTip": "Please enter phone number",
+  "phoneNumberInvalid": "Invalid phone number format",
+  "passwordLengthTip": "Password must be at least 6 characters",
+  "passwordMaxLengthTip": "Password must be at most 64 characters"
+}

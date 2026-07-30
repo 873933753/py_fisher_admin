@@ -1,0 +1,18 @@
+.product-form-module-shell {
+  padding: 1rem;
+  background-color: #fff;
+  border: 1px solid rgb(226 232 240);
+  border-radius: 0.5rem;
+}
+
+.product-form-module-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: rgb(15 23 42);
+}
+
+.product-form-module-title--section-gap {
+  margin-bottom: 12px;
+}

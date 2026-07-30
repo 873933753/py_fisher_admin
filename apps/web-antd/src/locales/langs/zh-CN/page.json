@@ -1,0 +1,36 @@
+{
+  "auth": {
+    "login": "登录",
+    "register": "注册",
+    "codeLogin": "验证码登录",
+    "qrcodeLogin": "二维码登录",
+    "forgetPassword": "忘记密码",
+    "profile": "个人中心"
+  },
+  "dashboard": {
+    "workspace": "工作台"
+  },
+  "mall": {
+    "user": "用户管理",
+    "homeTitle": "首页管理",
+    "banner": "轮播图管理",
+    "aboutUs": "关于我们",
+    "productTitle": "商品管理",
+    "category": "分类管理",
+    "coupon": "优惠券管理",
+    "productList": "商品列表",
+    "productCreate": "新增商品",
+    "productEdit": "编辑商品",
+    "orderTitle": "订单管理",
+    "orderList": "订单列表",
+    "orderDetail": "订单详情",
+    "orderFlowList": "订单流水列表",
+    "paypalTransactionList": "订单流水列表",
+    "productReviewList": "评论列表"
+  },
+  "system": {
+    "profile": "个人中心",
+    "title": "系统管理",
+    "user": "用户管理"
+  }
+}

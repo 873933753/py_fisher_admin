@@ -1,0 +1,7 @@
+{
+  "phoneNumber": "手机号",
+  "phoneNumberTip": "请输入手机号",
+  "phoneNumberInvalid": "手机号格式错误",
+  "passwordLengthTip": "密码长度不能少于6个字符",
+  "passwordMaxLengthTip": "密码长度不能超过64个字符"
+}

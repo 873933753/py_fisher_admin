@@ -1,0 +1,59 @@
+<script setup lang="ts">
+import type { VbenFormSchema } from '#/adapter/form';
+
+import { computed, onMounted, ref } from 'vue';
+
+import { ProfileBaseSetting } from '@vben/common-ui';
+import { useUserStore } from '@vben/stores';
+
+const profileBaseSettingRef = ref();
+const roleOptions = ref<Array<{ label: string; value: string }>>([]);
+const userStore = useUserStore();
+
+const formSchema = computed((): VbenFormSchema[] => {
+  return [
+    {
+      fieldName: 'realName',
+      component: 'Input',
+      label: '姓名',
+    },
+    {
+      fieldName: 'username',
+      component: 'Input',
+      label: '用户名',
+    },
+    {
+      fieldName: 'roles',
+      component: 'Select',
+      componentProps: {
+        mode: 'tags',
+        options: roleOptions.value,
+      },
+      label: '角色',
+    },
+    {
+      fieldName: 'introduction',
+      component: 'Textarea',
+      label: '个人简介',
+    },
+  ];
+});
+
+onMounted(async () => {
+  const data = userStore.userInfo;
+  if (!data) {
+    return;
+  }
+  roleOptions.value = (data.roles ?? []).map((role) => ({
+    label: role,
+    value: role,
+  }));
+  profileBaseSettingRef.value.getFormApi().setValues({
+    ...data,
+    roles: data.roles ?? [],
+  });
+});
+</script>
+<template>
+  <ProfileBaseSetting ref="profileBaseSettingRef" :form-schema="formSchema" />
+</template>
