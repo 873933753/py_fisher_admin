@@ -29,8 +29,8 @@
     "productReviewList": "评论列表"
   },
   "system": {
+    "admin": "后台用户管理",
     "profile": "个人中心",
-    "title": "系统管理",
-    "user": "用户管理"
+    "title": "系统管理"
   }
 }

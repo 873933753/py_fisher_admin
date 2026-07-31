@@ -29,8 +29,8 @@
     "productReviewList": "Product Reviews"
   },
   "system": {
+    "admin": "Admin Account Management",
     "profile": "Profile",
-    "title": "System",
-    "user": "User Management"
+    "title": "System"
   }
 }

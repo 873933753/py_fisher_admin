@@ -5,7 +5,6 @@ import { $t } from '#/locales';
 const routes: RouteRecordRaw[] = [
   {
     meta: {
-      hideInMenu: true,
       icon: 'lucide:settings',
       order: 1,
       title: $t('page.system.title'),
@@ -14,12 +13,12 @@ const routes: RouteRecordRaw[] = [
     path: '/system',
     children: [
       {
-        name: 'SystemUser',
-        path: '/system/user',
-        component: () => import('#/views/system/user/index.vue'),
+        name: 'SystemAdmin',
+        path: '/system/admin',
+        component: () => import('#/views/system/admin/index.vue'),
         meta: {
           icon: 'lucide:users',
-          title: $t('page.system.user'),
+          title: $t('page.system.admin'),
         },
       },
       {
@@ -27,6 +26,7 @@ const routes: RouteRecordRaw[] = [
         path: '/system/profile',
         component: () => import('#/views/_core/profile/index.vue'),
         meta: {
+          hideInMenu: true,
           icon: 'lucide:user-round',
           title: $t('page.system.profile'),
         },

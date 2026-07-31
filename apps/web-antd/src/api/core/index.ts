@@ -1,3 +1,4 @@
+export * from './admin-admin';
 export * from './admin-upload';
 export * from './admin-user';
 export * from './auth';
