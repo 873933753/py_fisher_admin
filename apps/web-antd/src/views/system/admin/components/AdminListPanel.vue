@@ -15,6 +15,7 @@ import {
 } from '#/components/mall-list';
 
 import {
+  formatAdminRoleLabel,
   getAdminDisabledLabel,
   getAdminDisabledTagColor,
 } from '../constants';
@@ -54,6 +55,13 @@ const columns: TableColumnsType<AdminAdminApi.ListItem> = [
     dataIndex: 'phone_number',
     key: 'phone_number',
     width: 160,
+    align: 'center',
+  },
+  {
+    title: '角色',
+    dataIndex: 'role',
+    key: 'role',
+    width: 120,
     align: 'center',
   },
   {
@@ -125,11 +133,14 @@ function isCurrentAdmin(adminId: number) {
           :loading="loading"
           :pagination="tablePagination"
           row-key="id"
-          :scroll="{ x: 760 }"
+          :scroll="{ x: 880 }"
           size="middle"
         >
           <template #bodyCell="{ column, record }">
-            <template v-if="column.key === 'is_disabled'">
+            <template v-if="column.key === 'role'">
+              {{ formatAdminRoleLabel(record.role) }}
+            </template>
+            <template v-else-if="column.key === 'is_disabled'">
               <Tag :color="getAdminDisabledTagColor(record.is_disabled)">
                 {{ getAdminDisabledLabel(record.is_disabled) }}
               </Tag>

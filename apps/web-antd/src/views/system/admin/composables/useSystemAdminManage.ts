@@ -23,6 +23,7 @@ export interface SystemAdminFormState {
   is_disabled: boolean;
   password: string;
   phone_number: string;
+  role: string;
 }
 
 const defaultFilters = (): SystemAdminFilters => ({
@@ -35,6 +36,7 @@ function defaultFormState(): SystemAdminFormState {
     phone_number: '',
     password: '',
     is_disabled: false,
+    role: '',
   };
 }
 
@@ -44,6 +46,7 @@ function detailToFormState(detail: AdminAdminApi.Detail): SystemAdminFormState {
     phone_number: detail.phone_number ?? '',
     password: '',
     is_disabled: detail.is_disabled ?? false,
+    role: detail.role ?? '',
   };
 }
 

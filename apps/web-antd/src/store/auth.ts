@@ -9,7 +9,12 @@ import { resetAllStores, useAccessStore, useUserStore } from '@vben/stores'
 import { notification } from 'ant-design-vue'
 import { defineStore } from 'pinia'
 
-import { getAdminProfileApi, loginApi, mapAdminInfoToUserInfo } from '#/api'
+import {
+  type AuthApi,
+  getAdminProfileApi,
+  loginApi,
+  mapAdminInfoToUserInfo,
+} from '#/api'
 import { $t } from '#/locales'
 import { normalizeAppPath } from '#/router/path'
 
@@ -27,6 +32,10 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  function applyAdminAccess(admin: AuthApi.AdminInfo) {
+    accessStore.setAccessCodes(admin.permissions ?? [])
+  }
+
   /**
    * 异步处理登录操作
    * Asynchronously handle the login process
@@ -36,18 +45,19 @@ export const useAuthStore = defineStore('auth', () => {
     let userInfo: null | UserInfo = null
     try {
       loginLoading.value = true
-      const { accessToken, userInfo: loginUserInfo } = await loginApi({
-        password: params.password,
-        phone_number: params.phone_number,
-      })
+      const { accessToken, adminInfo, userInfo: loginUserInfo } =
+        await loginApi({
+          password: params.password,
+          phone_number: params.phone_number,
+        })
       const normalizedUserInfo = normalizeUserInfo(loginUserInfo)
 
       if (accessToken) {
         accessStore.setAccessToken(accessToken)
         userStore.setUserInfo(normalizedUserInfo)
+        applyAdminAccess(adminInfo)
 
         userInfo = normalizedUserInfo
-        accessStore.setAccessCodes([])
 
         if (accessStore.loginExpired) {
           accessStore.setLoginExpired(false)
@@ -97,6 +107,7 @@ export const useAuthStore = defineStore('auth', () => {
       mapAdminInfoToUserInfo(profile, token),
     )
     userStore.setUserInfo(normalizedUserInfo)
+    applyAdminAccess(profile)
     return normalizedUserInfo
   }
 

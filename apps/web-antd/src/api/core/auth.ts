@@ -8,7 +8,9 @@ export namespace AuthApi {
   /** 管理员信息 */
   export interface AdminInfo {
     id: number;
+    permissions: string[];
     phone_number: string;
+    role: string;
   }
 
   /** 登录接口参数 */
@@ -20,6 +22,7 @@ export namespace AuthApi {
   /** 登录接口返回值（适配 Vben） */
   export interface LoginResult {
     accessToken: string;
+    adminInfo: AdminInfo;
     userInfo: UserInfo;
   }
 
@@ -39,7 +42,7 @@ export function mapAdminInfoToUserInfo(
     desc: '',
     homePath: preferences.app.defaultHomePath,
     realName: admin.phone_number,
-    roles: [],
+    roles: admin.role ? [admin.role] : [],
     token,
     userId: String(admin.id),
     username: '',
@@ -60,6 +63,7 @@ export async function loginApi(data: AuthApi.LoginParams) {
 
   return {
     accessToken: response.token,
+    adminInfo: response.userInfo,
     userInfo: mapAdminInfoToUserInfo(response.userInfo, response.token),
   } satisfies AuthApi.LoginResult;
 }

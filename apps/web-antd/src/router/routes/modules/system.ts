@@ -22,6 +22,15 @@ const routes: RouteRecordRaw[] = [
         },
       },
       {
+        name: 'SystemRbac',
+        path: '/system/rbac',
+        component: () => import('#/views/system/rbac/index.vue'),
+        meta: {
+          icon: 'lucide:shield',
+          title: $t('page.system.rbac'),
+        },
+      },
+      {
         name: 'SystemProfile',
         path: '/system/profile',
         component: () => import('#/views/_core/profile/index.vue'),

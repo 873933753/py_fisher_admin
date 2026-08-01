@@ -7,7 +7,7 @@ import { computed, ref } from 'vue';
 
 import { Form, Input, Modal, Spin, Switch } from 'ant-design-vue';
 
-import { ADMIN_PHONE_PATTERN } from '../constants';
+import { ADMIN_PHONE_PATTERN, formatAdminRoleLabel } from '../constants';
 
 const props = defineProps<{
   currentAdminId: number;
@@ -108,6 +108,9 @@ function handleCancel() {
             :maxlength="11"
             placeholder="请输入手机号"
           />
+        </Form.Item>
+        <Form.Item v-if="mode === 'edit'" label="角色">
+          <Input :value="formatAdminRoleLabel(formState.role)" disabled />
         </Form.Item>
         <Form.Item
           :label="mode === 'add' ? '密码' : '新密码'"
