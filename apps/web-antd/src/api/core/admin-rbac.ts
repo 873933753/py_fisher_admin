@@ -26,6 +26,44 @@ export namespace AdminRbacApi {
   export interface UpdateRolePermissionsParams {
     codes?: string[];
   }
+
+  export interface MenuItem {
+    component: null | string;
+    icon: null | string;
+    id: number;
+    menu_type: 'directory' | 'menu';
+    parent_id: null | number;
+    path: null | string;
+    permission_code: null | string;
+    sort: number;
+    title: string;
+  }
+
+  export interface MenuTreeNode extends MenuItem {
+    children: MenuTreeNode[];
+  }
+
+  export interface CreateMenuParams {
+    component?: null | string;
+    icon?: null | string;
+    menu_type?: 'directory' | 'menu';
+    parent_id?: null | number;
+    path?: null | string;
+    permission_code?: null | string;
+    sort?: number;
+    title: string;
+  }
+
+  export interface UpdateMenuParams {
+    component?: null | string;
+    icon?: null | string;
+    menu_type?: 'directory' | 'menu';
+    parent_id?: null | number;
+    path?: null | string;
+    permission_code?: null | string;
+    sort?: number;
+    title?: string;
+  }
 }
 
 /** 角色列表 */
@@ -59,4 +97,45 @@ export function updateRolePermissionsApi(
     `/admin/rbac/roles/${roleCode}/permissions`,
     data,
   );
+}
+
+/** 全量菜单树 */
+export function listMenuTreeApi() {
+  return requestClient.get<AdminRbacApi.MenuTreeNode[]>(
+    '/admin/rbac/menus/tree',
+  );
+}
+
+/** 菜单详情 */
+export function getMenuDetailApi(menuId: number) {
+  return requestClient.get<AdminRbacApi.MenuItem>(
+    `/admin/rbac/menus/${menuId}`,
+  );
+}
+
+/** 创建菜单 */
+export function createMenuApi(data: AdminRbacApi.CreateMenuParams) {
+  return requestClient.post<AdminRbacApi.MenuItem>(
+    '/admin/rbac/menus/create',
+    data,
+  );
+}
+
+/** 更新菜单 */
+export function updateMenuApi(
+  menuId: number,
+  data: AdminRbacApi.UpdateMenuParams,
+) {
+  return requestClient.request<AdminRbacApi.MenuItem>(
+    `/admin/rbac/menus/update/${menuId}`,
+    {
+      data,
+      method: 'PATCH',
+    },
+  );
+}
+
+/** 软删除菜单 */
+export function deleteMenuApi(menuId: number) {
+  return requestClient.delete<null>(`/admin/rbac/menus/delete/${menuId}`);
 }

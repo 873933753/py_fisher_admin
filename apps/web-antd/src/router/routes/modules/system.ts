@@ -31,6 +31,15 @@ const routes: RouteRecordRaw[] = [
         },
       },
       {
+        name: 'SystemMenu',
+        path: '/system/menu',
+        component: () => import('#/views/system/menu/index.vue'),
+        meta: {
+          icon: 'lucide:list-tree',
+          title: $t('page.system.menu'),
+        },
+      },
+      {
         name: 'SystemProfile',
         path: '/system/profile',
         component: () => import('#/views/_core/profile/index.vue'),

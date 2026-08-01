@@ -32,6 +32,7 @@
     "admin": "Admin Account Management",
     "profile": "Profile",
     "rbac": "Role Management",
+    "menu": "Menu Management",
     "title": "System"
   }
 }
