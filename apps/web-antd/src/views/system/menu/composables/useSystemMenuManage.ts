@@ -10,9 +10,11 @@ import { message, Modal } from 'ant-design-vue';
 import {
   createMenuApi,
   deleteMenuApi,
+  getMenuApisApi,
   getMenuDetailApi,
   listMenuTreeApi,
   updateMenuApi,
+  updateMenuApisApi,
 } from '#/api/core/admin-rbac';
 
 import {
@@ -21,6 +23,13 @@ import {
   formStateToUpdateParams,
   menuDetailToFormState,
 } from '../constants';
+import type { MenuApiRow } from '../types';
+import {
+  createMenuApiRow,
+  mapMenuApiRowsToPayload,
+  mapMenuApiRulesToRows,
+  validateMenuApiRows,
+} from '../utils/menu-api';
 import {
   collectRootExpandKeys,
   filterMenuByKeyword,
@@ -39,6 +48,11 @@ export function useSystemMenuManage() {
   const menuDetail = ref<AdminRbacApi.MenuItem | null>(null);
   const formState = reactive<MenuFormState>(defaultMenuFormState());
   const originalDetail = ref<AdminRbacApi.MenuItem | null>(null);
+
+  const apiDrawerOpen = ref(false);
+  const apiLoading = ref(false);
+  const apiSaving = ref(false);
+  const apiRows = ref<MenuApiRow[]>([]);
 
   const filteredTreeRoots = computed(() =>
     filterMenuByKeyword(sourceTree.value, treeKeyword.value),
@@ -60,6 +74,38 @@ export function useSystemMenuManage() {
   const canEditOrDelete = computed(
     () => panelMode.value === 'view' && selectedMenuId.value !== null,
   );
+
+  const canConfigApi = computed(
+    () =>
+      panelMode.value === 'view' &&
+      menuDetail.value?.menu_type === 'menu' &&
+      selectedMenuId.value !== null,
+  );
+
+  const configApiDisabledReason = computed(() => {
+    if (panelMode.value !== 'view') {
+      return '请先完成当前编辑';
+    }
+    if (selectedMenuId.value === null) {
+      return '请先选择菜单';
+    }
+    if (menuDetail.value?.menu_type === 'directory') {
+      return '仅页面类型菜单可配置接口';
+    }
+    return undefined;
+  });
+
+  const apiMenuLabel = computed(() => {
+    if (!menuDetail.value) {
+      return '';
+    }
+    return `${menuDetail.value.title}（ID: ${menuDetail.value.id}）`;
+  });
+
+  function closeApiDrawer() {
+    apiDrawerOpen.value = false;
+    apiRows.value = [];
+  }
 
   async function loadMenuTree() {
     treeLoading.value = true;
@@ -113,6 +159,7 @@ export function useSystemMenuManage() {
   }
 
   function openAddTop() {
+    closeApiDrawer();
     panelMode.value = 'add';
     originalDetail.value = null;
     resetFormState({ parent_id: undefined });
@@ -123,6 +170,7 @@ export function useSystemMenuManage() {
     if (parentId === null) {
       return;
     }
+    closeApiDrawer();
     panelMode.value = 'add';
     originalDetail.value = null;
     resetFormState({ parent_id: parentId });
@@ -132,9 +180,69 @@ export function useSystemMenuManage() {
     if (!menuDetail.value) {
       return;
     }
+    closeApiDrawer();
     panelMode.value = 'edit';
     originalDetail.value = { ...menuDetail.value };
     Object.assign(formState, menuDetailToFormState(menuDetail.value));
+  }
+
+  async function openApiConfig() {
+    const menuId = selectedMenuId.value;
+    const detail = menuDetail.value;
+    if (
+      menuId === null ||
+      !detail ||
+      detail.menu_type !== 'menu' ||
+      panelMode.value !== 'view'
+    ) {
+      return;
+    }
+
+    apiDrawerOpen.value = true;
+    apiLoading.value = true;
+    apiRows.value = [];
+
+    try {
+      const result = await getMenuApisApi(menuId);
+      apiRows.value = mapMenuApiRulesToRows(result.apis ?? []);
+    } catch {
+      apiDrawerOpen.value = false;
+      throw new Error('fetch menu apis failed');
+    } finally {
+      apiLoading.value = false;
+    }
+  }
+
+  function addApiRow() {
+    apiRows.value = [...apiRows.value, createMenuApiRow()];
+  }
+
+  function removeApiRow(index: number) {
+    apiRows.value = apiRows.value.filter((_, rowIndex) => rowIndex !== index);
+  }
+
+  async function saveMenuApis() {
+    const menuId = selectedMenuId.value;
+    if (menuId === null) {
+      return;
+    }
+
+    const validationError = validateMenuApiRows(apiRows.value);
+    if (validationError) {
+      message.warning(validationError);
+      return;
+    }
+
+    apiSaving.value = true;
+    try {
+      await updateMenuApisApi(menuId, {
+        apis: mapMenuApiRowsToPayload(apiRows.value),
+      });
+      message.success('更新成功');
+      closeApiDrawer();
+    } finally {
+      apiSaving.value = false;
+    }
   }
 
   async function cancelForm() {
@@ -212,6 +320,7 @@ export function useSystemMenuManage() {
     if (keys[0] === oldKeys?.[0]) {
       return;
     }
+    closeApiDrawer();
     enterViewMode();
     const menuId = keys[0];
     if (menuId === undefined || menuId === null || menuId === '') {
@@ -222,10 +331,19 @@ export function useSystemMenuManage() {
   });
 
   return {
+    addApiRow,
+    apiDrawerOpen,
+    apiLoading,
+    apiMenuLabel,
+    apiRows,
+    apiSaving,
     bootstrapInitialSelection,
     cancelForm,
     canAddChild,
+    canConfigApi,
     canEditOrDelete,
+    closeApiDrawer,
+    configApiDisabledReason,
     confirmDelete,
     detailLoading,
     formState,
@@ -233,8 +351,11 @@ export function useSystemMenuManage() {
     menuDetail,
     openAddChild,
     openAddTop,
+    openApiConfig,
     openEdit,
     panelMode,
+    removeApiRow,
+    saveMenuApis,
     selectedKeys,
     submitForm,
     submitting,

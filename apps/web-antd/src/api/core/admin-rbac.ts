@@ -73,6 +73,29 @@ export namespace AdminRbacApi {
     sort?: number;
     title?: string;
   }
+
+  export interface MenuApiRule {
+    id: number;
+    menu_id: number;
+    method: string;
+    path_pattern: string;
+    sort: number;
+  }
+
+  export interface MenuApisResult {
+    apis: MenuApiRule[];
+    menu_id: number;
+  }
+
+  export interface UpdateMenuApiItem {
+    method?: string;
+    path_pattern: string;
+    sort?: number;
+  }
+
+  export interface UpdateMenuApisParams {
+    apis?: UpdateMenuApiItem[];
+  }
 }
 
 /** 角色列表 */
@@ -165,4 +188,22 @@ export function updateMenuApi(
 /** 软删除菜单 */
 export function deleteMenuApi(menuId: number) {
   return requestClient.delete<null>(`/admin/rbac/menus/delete/${menuId}`);
+}
+
+/** 查询菜单已绑接口 */
+export function getMenuApisApi(menuId: number) {
+  return requestClient.get<AdminRbacApi.MenuApisResult>(
+    `/admin/rbac/menus/${menuId}/apis`,
+  );
+}
+
+/** 覆盖菜单绑定接口 */
+export function updateMenuApisApi(
+  menuId: number,
+  data: AdminRbacApi.UpdateMenuApisParams,
+) {
+  return requestClient.put<AdminRbacApi.MenuApisResult>(
+    `/admin/rbac/menus/${menuId}/apis`,
+    data,
+  );
 }

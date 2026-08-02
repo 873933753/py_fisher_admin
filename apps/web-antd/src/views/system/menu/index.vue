@@ -3,6 +3,7 @@ import { onMounted } from 'vue';
 
 import { Card } from 'ant-design-vue';
 
+import MenuApiConfigDrawer from './components/MenuApiConfigDrawer.vue';
 import MenuDetailPanel from './components/MenuDetailPanel.vue';
 import MenuToolbar from './components/MenuToolbar.vue';
 import MenuTreePanel from './components/MenuTreePanel.vue';
@@ -11,10 +12,19 @@ import { useSystemMenuManage } from './composables/useSystemMenuManage';
 defineOptions({ name: 'SystemMenu' });
 
 const {
+  addApiRow,
+  apiDrawerOpen,
+  apiLoading,
+  apiMenuLabel,
+  apiRows,
+  apiSaving,
   bootstrapInitialSelection,
   cancelForm,
   canAddChild,
+  canConfigApi,
   canEditOrDelete,
+  closeApiDrawer,
+  configApiDisabledReason,
   confirmDelete,
   detailLoading,
   formState,
@@ -22,8 +32,11 @@ const {
   menuDetail,
   openAddChild,
   openAddTop,
+  openApiConfig,
   openEdit,
   panelMode,
+  removeApiRow,
+  saveMenuApis,
   selectedKeys,
   submitForm,
   submitting,
@@ -45,10 +58,13 @@ onMounted(async () => {
       <div class="mb-4">
         <MenuToolbar
           :can-add-child="canAddChild"
+          :can-config-api="canConfigApi"
           :can-edit-or-delete="canEditOrDelete"
+          :config-api-disabled-reason="configApiDisabledReason"
           :submitting="submitting"
           @add-child="openAddChild"
           @add-top="openAddTop"
+          @config-api="openApiConfig"
           @delete="confirmDelete"
           @edit="openEdit"
         />
@@ -74,5 +90,17 @@ onMounted(async () => {
         </div>
       </div>
     </Card>
+
+    <MenuApiConfigDrawer
+      v-model:open="apiDrawerOpen"
+      v-model:rows="apiRows"
+      :loading="apiLoading"
+      :menu-label="apiMenuLabel"
+      :saving="apiSaving"
+      @add-row="addApiRow"
+      @close="closeApiDrawer"
+      @remove-row="removeApiRow"
+      @save="saveMenuApis"
+    />
   </div>
 </template>

@@ -12,3 +12,10 @@ export interface MenuFormState {
   sort: number;
   title: string;
 }
+
+export interface MenuApiRow {
+  key: string;
+  method: string;
+  path_pattern: string;
+  sort: number;
+}
