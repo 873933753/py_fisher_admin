@@ -1,20 +1,23 @@
 <script lang="ts" setup>
 import type { PermissionGroup } from '../composables/useSystemRbacManage';
 
-import { Checkbox, Empty, Spin } from 'ant-design-vue';
+import { Alert, Button, Checkbox, Drawer, Empty, Spin } from 'ant-design-vue';
 
 import { formatPermissionGroupLabel } from '../constants';
 
-defineProps<{
+const props = defineProps<{
   loading: boolean;
   permissionGroups: PermissionGroup[];
+  readOnly: boolean;
   roleLabel: string;
   saving: boolean;
 }>();
 
+const open = defineModel<boolean>('open', { default: false });
 const checkedCodes = defineModel<string[]>('checkedCodes', { default: [] });
 
 const emit = defineEmits<{
+  close: [];
   save: [];
 }>();
 
@@ -23,6 +26,9 @@ function isPermissionChecked(code: string) {
 }
 
 function togglePermission(code: string, checked: boolean) {
+  if (props.readOnly) {
+    return;
+  }
   if (checked) {
     if (!checkedCodes.value.includes(code)) {
       checkedCodes.value = [...checkedCodes.value, code];
@@ -32,38 +38,40 @@ function togglePermission(code: string, checked: boolean) {
 
   checkedCodes.value = checkedCodes.value.filter((item) => item !== code);
 }
+
+function handleClose() {
+  open.value = false;
+  emit('close');
+}
 </script>
 
 <template>
-  <section
-    class="flex h-full flex-col rounded-lg border border-border bg-background shadow-sm"
+  <Drawer
+    v-model:open="open"
+    :destroy-on-close="true"
+    :mask-closable="!saving"
+    title="权限配置"
+    width="720"
+    @close="emit('close')"
   >
-    <div
-      class="flex items-center justify-between gap-3 border-b border-border px-4 py-3"
-    >
-      <div>
-        <div class="text-sm font-medium">权限配置</div>
-        <div v-if="roleLabel" class="text-xs text-muted-foreground">
-          当前角色：{{ roleLabel }}
-        </div>
+    <div class="flex h-full flex-col gap-4">
+      <div class="text-sm text-muted-foreground">
+        当前角色：{{ roleLabel || '—' }}
       </div>
-      <button
-        class="inline-flex h-8 items-center rounded-md bg-primary px-4 text-sm text-primary-foreground transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
-        :disabled="loading || saving || !roleLabel"
-        type="button"
-        @click="emit('save')"
-      >
-        {{ saving ? '保存中...' : '保存' }}
-      </button>
-    </div>
 
-    <div class="min-h-0 flex-1 overflow-y-auto p-4">
-      <Spin :spinning="loading">
+      <Alert
+        v-if="readOnly"
+        show-icon
+        type="info"
+        message="超级管理员权限不可修改"
+      />
+
+      <Spin :spinning="loading" class="min-h-0 flex-1 overflow-y-auto">
         <Empty
           v-if="!loading && permissionGroups.length === 0"
           description="暂无权限数据"
         />
-        <div v-else class="space-y-5">
+        <div v-else class="space-y-5 pb-4">
           <section
             v-for="group in permissionGroups"
             :key="group.name"
@@ -75,12 +83,16 @@ function togglePermission(code: string, checked: boolean) {
                 {{ group.name }}
               </span>
             </div>
-            <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            <div class="grid gap-3 md:grid-cols-2">
               <Checkbox
                 v-for="permission in group.items"
                 :key="permission.code"
                 :checked="isPermissionChecked(permission.code)"
-                @change="(event) => togglePermission(permission.code, event.target.checked)"
+                :disabled="readOnly"
+                @change="
+                  (event) =>
+                    togglePermission(permission.code, event.target.checked)
+                "
               >
                 <span>{{ permission.name }}</span>
                 <span class="ml-1 text-xs text-muted-foreground">
@@ -91,6 +103,18 @@ function togglePermission(code: string, checked: boolean) {
           </section>
         </div>
       </Spin>
+
+      <div class="flex justify-end gap-2 border-t border-border pt-4">
+        <Button :disabled="saving" @click="handleClose">取消</Button>
+        <Button
+          :disabled="loading || readOnly"
+          :loading="saving"
+          type="primary"
+          @click="emit('save')"
+        >
+          保存
+        </Button>
+      </div>
     </div>
-  </section>
+  </Drawer>
 </template>

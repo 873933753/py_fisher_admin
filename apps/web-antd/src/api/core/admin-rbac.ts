@@ -27,6 +27,15 @@ export namespace AdminRbacApi {
     codes?: string[];
   }
 
+  export interface RoleMenusResult {
+    menu_ids: number[];
+    role_code: string;
+  }
+
+  export interface UpdateRoleMenusParams {
+    menu_ids?: number[];
+  }
+
   export interface MenuItem {
     component: null | string;
     icon: null | string;
@@ -95,6 +104,24 @@ export function updateRolePermissionsApi(
 ) {
   return requestClient.put<AdminRbacApi.RolePermissionsResult>(
     `/admin/rbac/roles/${roleCode}/permissions`,
+    data,
+  );
+}
+
+/** 查询角色已绑菜单 */
+export function getRoleMenusApi(roleCode: string) {
+  return requestClient.get<AdminRbacApi.RoleMenusResult>(
+    `/admin/rbac/roles/${roleCode}/menus`,
+  );
+}
+
+/** 覆盖角色菜单 */
+export function updateRoleMenusApi(
+  roleCode: string,
+  data: AdminRbacApi.UpdateRoleMenusParams,
+) {
+  return requestClient.put<AdminRbacApi.RoleMenusResult>(
+    `/admin/rbac/roles/${roleCode}/menus`,
     data,
   );
 }

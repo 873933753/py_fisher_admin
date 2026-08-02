@@ -1,47 +1,70 @@
 <script lang="ts" setup>
-import { computed } from 'vue';
-
-import { MallListPage } from '#/components/mall-list';
-
-import RoleListPanel from './components/RoleListPanel.vue';
-import RolePermissionPanel from './components/RolePermissionPanel.vue';
+import RoleMenuConfigDrawer from './components/RoleMenuConfigDrawer.vue';
+import RolePermissionConfigDrawer from './components/RolePermissionConfigDrawer.vue';
+import RoleTablePanel from './components/RoleTablePanel.vue';
 import { useSystemRbacManage } from './composables/useSystemRbacManage';
 
 defineOptions({ name: 'SystemRbac' });
 
 const {
+  activeRoleLabel,
   checkedCodes,
-  confirmSave,
+  closeMenuDrawer,
+  closePermissionDrawer,
+  confirmSaveMenus,
+  confirmSavePermissions,
+  isActiveRoleReadOnly,
+  menuCheckedKeys,
+  menuDrawerOpen,
+  menuExpandedKeys,
+  menuLoading,
+  menuSaving,
+  menuTreeData,
+  onMenuTreeCheck,
+  openMenuConfig,
+  openPermissionConfig,
+  permissionDrawerOpen,
   permissionGroups,
+  permissionSaving,
   permissionsLoading,
   roles,
   rolesLoading,
-  saving,
-  selectRole,
-  selectedRole,
-  selectedRoleCode,
 } = useSystemRbacManage();
-
-const selectedRoleLabel = computed(() => selectedRole.value?.name ?? '');
 </script>
 
 <template>
-  <MallListPage>
-    <div class="grid min-h-[calc(100vh-8rem)] gap-4 lg:grid-cols-[240px_minmax(0,1fr)]">
-      <RoleListPanel
-        :loading="rolesLoading"
-        :roles="roles"
-        :selected-role-code="selectedRoleCode"
-        @select="selectRole"
-      />
-      <RolePermissionPanel
-        v-model:checked-codes="checkedCodes"
-        :loading="permissionsLoading"
-        :permission-groups="permissionGroups"
-        :role-label="selectedRoleLabel"
-        :saving="saving"
-        @save="confirmSave"
-      />
-    </div>
-  </MallListPage>
+  <div>
+    <RoleTablePanel
+      :loading="rolesLoading"
+      :roles="roles"
+      @config-menus="openMenuConfig"
+      @config-permissions="openPermissionConfig"
+    />
+
+    <RoleMenuConfigDrawer
+      v-model:open="menuDrawerOpen"
+      v-model:checked-keys="menuCheckedKeys"
+      v-model:expanded-keys="menuExpandedKeys"
+      :loading="menuLoading"
+      :read-only="isActiveRoleReadOnly"
+      :role-label="activeRoleLabel"
+      :saving="menuSaving"
+      :tree-data="menuTreeData"
+      @check="onMenuTreeCheck"
+      @close="closeMenuDrawer"
+      @save="confirmSaveMenus"
+    />
+
+    <RolePermissionConfigDrawer
+      v-model:open="permissionDrawerOpen"
+      v-model:checked-codes="checkedCodes"
+      :loading="permissionsLoading"
+      :permission-groups="permissionGroups"
+      :read-only="isActiveRoleReadOnly"
+      :role-label="activeRoleLabel"
+      :saving="permissionSaving"
+      @close="closePermissionDrawer"
+      @save="confirmSavePermissions"
+    />
+  </div>
 </template>

@@ -3,6 +3,8 @@ const ROLE_LABELS: Record<string, string> = {
   super_admin: '超级管理员',
 };
 
+export const SUPER_ADMIN_ROLE_CODE = 'super_admin';
+
 const GROUP_LABELS: Record<string, string> = {
   admin: '后台账号',
   rbac: '权限管理',
@@ -24,4 +26,8 @@ export function formatPermissionGroupLabel(groupName?: string): string {
     return '其他';
   }
   return GROUP_LABELS[value] ?? value;
+}
+
+export function isSuperAdminRole(roleCode?: string) {
+  return roleCode === SUPER_ADMIN_ROLE_CODE;
 }
