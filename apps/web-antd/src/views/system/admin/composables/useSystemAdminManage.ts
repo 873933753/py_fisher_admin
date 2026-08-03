@@ -236,7 +236,6 @@ export function useSystemAdminManage() {
   }
 
   onMounted(() => {
-    void fetchRoleOptions();
     void fetchList();
   });
 

@@ -22,11 +22,14 @@ export function createMenuApiRow(
 ): MenuApiRow {
   menuApiRowSeed += 1;
   return {
-    key: `menu-api-${menuApiRowSeed}`,
+    key: partial.id
+      ? `menu-api-${partial.id}`
+      : `menu-api-new-${menuApiRowSeed}`,
     method: partial.method ?? '*',
     path_pattern: partial.path_pattern ?? '',
     remark: partial.remark ?? '',
     sort: partial.sort ?? 0,
+    ...(partial.id !== undefined ? { id: partial.id } : {}),
   };
 }
 
@@ -35,6 +38,7 @@ export function mapMenuApiRulesToRows(
 ): MenuApiRow[] {
   return apis.map((api) =>
     createMenuApiRow({
+      id: api.id,
       method: api.method,
       path_pattern: api.path_pattern,
       remark: api.remark ?? '',
@@ -43,16 +47,23 @@ export function mapMenuApiRulesToRows(
   );
 }
 
-export function mapMenuApiRowsToPayload(rows: MenuApiRow[]) {
+export function mapMenuApiRowsToPayload(
+  rows: MenuApiRow[],
+): AdminRbacApi.UpdateMenuApiItem[] {
   return rows.map((row) => {
     const remark = row.remark.trim();
     return {
+      ...(row.id !== undefined ? { id: row.id } : {}),
       method: row.method,
       path_pattern: row.path_pattern.trim(),
       sort: row.sort,
       ...(remark ? { remark } : {}),
     };
   });
+}
+
+export function cloneMenuApiRows(rows: MenuApiRow[]): MenuApiRow[] {
+  return rows.map((row) => ({ ...row }));
 }
 
 export function validateMenuApiRows(rows: MenuApiRow[]): null | string {

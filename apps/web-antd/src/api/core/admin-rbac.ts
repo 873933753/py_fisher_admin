@@ -77,6 +77,7 @@ export namespace AdminRbacApi {
   }
 
   export interface UpdateMenuApiItem {
+    id?: number;
     method?: string;
     path_pattern: string;
     remark?: null | string;
@@ -181,7 +182,7 @@ export function updateMenuApi(
   );
 }
 
-/** 软删除菜单 */
+/** 删除菜单 */
 export function deleteMenuApi(menuId: number) {
   return requestClient.delete<null>(`/admin/rbac/menus/delete/${menuId}`);
 }

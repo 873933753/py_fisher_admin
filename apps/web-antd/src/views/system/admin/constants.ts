@@ -13,6 +13,17 @@ export function formatAdminRoleLabel(role?: string): string {
   return ADMIN_ROLE_LABELS[value] ?? value;
 }
 
+export function formatAdminListRoleName(
+  roleName?: string,
+  roleCode?: string,
+): string {
+  const name = roleName?.trim();
+  if (name) {
+    return name;
+  }
+  return formatAdminRoleLabel(roleCode);
+}
+
 export function getAdminDisabledLabel(isDisabled: boolean): string {
   return isDisabled ? '已禁用' : '启用';
 }

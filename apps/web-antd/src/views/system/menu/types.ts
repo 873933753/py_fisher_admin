@@ -13,6 +13,7 @@ export interface MenuFormState {
 }
 
 export interface MenuApiRow {
+  id?: number;
   key: string;
   method: string;
   path_pattern: string;

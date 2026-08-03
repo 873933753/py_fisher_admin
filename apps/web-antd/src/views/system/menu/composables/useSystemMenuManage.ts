@@ -1,7 +1,8 @@
 import type { Key } from 'ant-design-vue/es/_util/type';
 
+import type { MenuApiRow, MenuFormState, PanelMode } from '../types';
+
 import type { AdminRbacApi } from '#/api/core/admin-rbac';
-import type { MenuFormState, PanelMode } from '../types';
 
 import { computed, reactive, ref, watch } from 'vue';
 
@@ -23,8 +24,8 @@ import {
   formStateToUpdateParams,
   menuDetailToFormState,
 } from '../constants';
-import type { MenuApiRow } from '../types';
 import {
+  cloneMenuApiRows,
   createMenuApiRow,
   mapMenuApiRowsToPayload,
   mapMenuApiRulesToRows,
@@ -56,6 +57,8 @@ export function useSystemMenuManage() {
   const apiLoading = ref(false);
   const apiSaving = ref(false);
   const apiRows = ref<MenuApiRow[]>([]);
+  const apiPanelEditing = ref(false);
+  const apiEditSnapshot = ref<MenuApiRow[]>([]);
 
   const filteredTreeRoots = computed(() =>
     filterMenuByKeyword(sourceTree.value, treeKeyword.value),
@@ -85,17 +88,33 @@ export function useSystemMenuManage() {
     return isPageMenuType(formState.menu_type);
   });
 
-  const canSaveApis = computed(() => panelMode.value !== 'add' && selectedMenuId.value !== null);
+  const canSaveApis = computed(
+    () => panelMode.value === 'view' && selectedMenuId.value !== null,
+  );
 
-  const apiSaveDisabledReason = computed(() => {
-    if (panelMode.value === 'add') {
-      return '请先创建菜单';
-    }
-    return undefined;
-  });
+  const canEditApis = computed(() => canSaveApis.value && !apiPanelEditing.value);
 
   function resetApiRows() {
     apiRows.value = [];
+    exitApiEditMode();
+  }
+
+  function exitApiEditMode() {
+    apiPanelEditing.value = false;
+    apiEditSnapshot.value = [];
+  }
+
+  function openApiEdit() {
+    if (!canEditApis.value) {
+      return;
+    }
+    apiEditSnapshot.value = cloneMenuApiRows(apiRows.value);
+    apiPanelEditing.value = true;
+  }
+
+  function cancelApiEdit() {
+    apiRows.value = cloneMenuApiRows(apiEditSnapshot.value);
+    exitApiEditMode();
   }
 
   async function loadMenuTree() {
@@ -199,6 +218,7 @@ export function useSystemMenuManage() {
     if (!menuDetail.value) {
       return;
     }
+    exitApiEditMode();
     panelMode.value = 'edit';
     originalDetail.value = { ...menuDetail.value };
     Object.assign(formState, menuDetailToFormState(menuDetail.value));
@@ -215,7 +235,7 @@ export function useSystemMenuManage() {
 
   async function saveMenuApis() {
     const menuId = selectedMenuId.value;
-    if (menuId === null || !canSaveApis.value) {
+    if (menuId === null || !canSaveApis.value || !apiPanelEditing.value) {
       return;
     }
 
@@ -231,6 +251,8 @@ export function useSystemMenuManage() {
         apis: mapMenuApiRowsToPayload(apiRows.value),
       });
       message.success('接口保存成功');
+      await loadMenuApis(menuId);
+      exitApiEditMode();
     } finally {
       apiSaving.value = false;
     }
@@ -287,7 +309,7 @@ export function useSystemMenuManage() {
 
     Modal.confirm({
       title: '确认删除该菜单？',
-      content: `确定软删除菜单「${detail.title}」？`,
+      content: `确定删除菜单「${detail.title}」？删除后不可恢复，并会清除相关角色绑定。`,
       okText: '删除',
       okType: 'danger',
       cancelText: '取消',
@@ -340,11 +362,13 @@ export function useSystemMenuManage() {
   return {
     addApiRow,
     apiLoading,
+    apiPanelEditing,
     apiRows,
-    apiSaveDisabledReason,
     apiSaving,
     bootstrapInitialSelection,
+    canEditApis,
     canSaveApis,
+    cancelApiEdit,
     cancelForm,
     canAddChild,
     canEditOrDelete,
@@ -355,6 +379,7 @@ export function useSystemMenuManage() {
     menuDetail,
     openAddChild,
     openAddTop,
+    openApiEdit,
     openEdit,
     panelMode,
     removeApiRow,

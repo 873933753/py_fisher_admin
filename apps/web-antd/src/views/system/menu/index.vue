@@ -14,14 +14,15 @@ defineOptions({ name: 'SystemMenu' });
 const {
   addApiRow,
   apiLoading,
+  apiPanelEditing,
   apiRows,
-  apiSaveDisabledReason,
   apiSaving,
   bootstrapInitialSelection,
+  canEditApis,
+  cancelApiEdit,
   cancelForm,
   canAddChild,
   canEditOrDelete,
-  canSaveApis,
   confirmDelete,
   detailLoading,
   formState,
@@ -29,6 +30,7 @@ const {
   menuDetail,
   openAddChild,
   openAddTop,
+  openApiEdit,
   openEdit,
   panelMode,
   removeApiRow,
@@ -84,11 +86,13 @@ onMounted(async () => {
           <MenuApiConfigPanel
             v-if="showApiPanel"
             v-model:rows="apiRows"
+            :can-edit="canEditApis"
+            :editing="apiPanelEditing"
             :loading="apiLoading"
-            :save-disabled="!canSaveApis"
-            :save-disabled-reason="apiSaveDisabledReason"
             :saving="apiSaving"
             @add-row="addApiRow"
+            @cancel="cancelApiEdit"
+            @edit="openApiEdit"
             @remove-row="removeApiRow"
             @save="saveMenuApis"
           />

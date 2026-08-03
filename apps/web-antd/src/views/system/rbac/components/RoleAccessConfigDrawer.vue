@@ -4,6 +4,8 @@ import type { DataNode } from 'ant-design-vue/es/tree';
 
 import type { AdminRbacApi } from '#/api/core/admin-rbac';
 
+import { computed } from 'vue';
+
 import {
   Alert,
   Button,
@@ -34,11 +36,24 @@ const expandedKeys = defineModel<Key[]>('expandedKeys', { required: true });
 
 const emit = defineEmits<{
   apiCheck: [apiId: number, checked: boolean];
+  apiCheckAll: [checked: boolean];
   close: [];
   menuCheck: [checked: Key[] | { checked: Key[]; halfChecked: Key[] }];
   menuSelect: [selectedKeys: Key[]];
   save: [];
 }>();
+
+const allApisChecked = computed(
+  () =>
+    props.selectedMenuApis.length > 0 &&
+    props.selectedMenuApis.every((api) => props.checkedApiIds.has(api.id)),
+);
+
+const apisIndeterminate = computed(
+  () =>
+    props.selectedMenuApis.some((api) => props.checkedApiIds.has(api.id)) &&
+    !allApisChecked.value,
+);
 
 function handleClose() {
   open.value = false;
@@ -113,6 +128,29 @@ function handleClose() {
                 <Empty description="该菜单暂无接口" />
               </template>
               <div v-else class="flex w-full flex-col gap-3">
+                <div
+                  class="flex items-center gap-4 border-b border-border pb-3"
+                >
+                  <Checkbox
+                    :checked="allApisChecked"
+                    :disabled="readOnly"
+                    :indeterminate="apisIndeterminate"
+                    @change="
+                      (event) =>
+                        emit('apiCheckAll', event.target.checked === true)
+                    "
+                  >
+                    全选
+                  </Checkbox>
+                  <Button
+                    :disabled="readOnly"
+                    size="small"
+                    type="link"
+                    @click="emit('apiCheckAll', false)"
+                  >
+                    取消
+                  </Button>
+                </div>
                 <Checkbox
                   v-for="api in selectedMenuApis"
                   :key="api.id"

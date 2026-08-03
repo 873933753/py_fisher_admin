@@ -7,6 +7,7 @@ export namespace AdminAdminApi {
     is_disabled: boolean;
     phone_number: string;
     role: string;
+    role_name?: string;
   }
 
   export type Detail = ListItem;

@@ -24,6 +24,7 @@ const {
   formSubmitting,
   isActiveRoleReadOnly,
   onApiCheck,
+  onApiCheckAll,
   onMenuCheck,
   onMenuSelect,
   openAddRole,
@@ -71,6 +72,7 @@ const {
       :selected-menu-keys="selectedMenuKeys"
       :tree-data="accessTreeData"
       @api-check="onApiCheck"
+      @api-check-all="onApiCheckAll"
       @menu-check="onMenuCheck"
       @menu-select="onMenuSelect"
       @close="closeAccessModal"

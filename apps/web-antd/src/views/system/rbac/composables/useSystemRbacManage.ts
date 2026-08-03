@@ -324,6 +324,25 @@ export function useSystemRbacManage() {
     checkedApiIds.value = nextApiIds;
   }
 
+  function onApiCheckAll(checked: boolean) {
+    if (!treeContext.value || isActiveRoleReadOnly.value) {
+      return;
+    }
+
+    const ctx = treeContext.value;
+    const nextMenuIds = new Set(checkedMenuIds.value);
+    const nextApiIds = new Set(checkedApiIds.value);
+    for (const api of selectedMenuApis.value) {
+      if (checked) {
+        applyApiCheck(ctx, nextMenuIds, nextApiIds, api.id, true);
+      } else {
+        nextApiIds.delete(api.id);
+      }
+    }
+    checkedMenuIds.value = nextMenuIds;
+    checkedApiIds.value = nextApiIds;
+  }
+
   async function saveAccess() {
     if (!activeRole.value || isActiveRoleReadOnly.value) {
       return;
@@ -384,6 +403,7 @@ export function useSystemRbacManage() {
     formSubmitting,
     isActiveRoleReadOnly,
     onApiCheck,
+    onApiCheckAll,
     onMenuCheck,
     onMenuSelect,
     openAddRole,
