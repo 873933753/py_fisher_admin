@@ -7,7 +7,7 @@ import { Button, Table } from 'ant-design-vue';
 
 import { MallListPage, MallListTableCard } from '#/components/mall-list';
 
-import { formatRoleLabel } from '../constants';
+import { formatRoleLabel, isSuperAdminRole } from '../constants';
 
 defineProps<{
   loading: boolean;
@@ -15,8 +15,10 @@ defineProps<{
 }>();
 
 const emit = defineEmits<{
-  configMenus: [role: AdminRbacApi.RoleItem];
-  configPermissions: [role: AdminRbacApi.RoleItem];
+  add: [];
+  configAccess: [role: AdminRbacApi.RoleItem];
+  delete: [role: AdminRbacApi.RoleItem];
+  edit: [role: AdminRbacApi.RoleItem];
 }>();
 
 const columns: TableColumnsType<AdminRbacApi.RoleItem> = [
@@ -55,7 +57,10 @@ const columns: TableColumnsType<AdminRbacApi.RoleItem> = [
   <MallListPage>
     <MallListTableCard>
       <template #header>
-        <div class="text-base font-medium text-foreground">角色列表</div>
+        <div class="flex items-center justify-between gap-3">
+          <div class="text-base font-medium text-foreground">角色列表</div>
+          <Button type="primary" @click="emit('add')">新建角色</Button>
+        </div>
       </template>
       <Table
         :columns="columns"
@@ -75,19 +80,27 @@ const columns: TableColumnsType<AdminRbacApi.RoleItem> = [
               <Button
                 size="small"
                 type="link"
-                @click="emit('configMenus', record as AdminRbacApi.RoleItem)"
+                @click="emit('configAccess', record as AdminRbacApi.RoleItem)"
               >
-                菜单配置
+                授权配置
               </Button>
-              <Button
-                size="small"
-                type="link"
-                @click="
-                  emit('configPermissions', record as AdminRbacApi.RoleItem)
-                "
-              >
-                权限配置
-              </Button>
+              <template v-if="!isSuperAdminRole(record.code)">
+                <Button
+                  size="small"
+                  type="link"
+                  @click="emit('edit', record as AdminRbacApi.RoleItem)"
+                >
+                  编辑
+                </Button>
+                <Button
+                  danger
+                  size="small"
+                  type="link"
+                  @click="emit('delete', record as AdminRbacApi.RoleItem)"
+                >
+                  删除
+                </Button>
+              </template>
             </div>
           </template>
         </template>

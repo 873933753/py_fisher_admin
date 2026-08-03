@@ -9,6 +9,7 @@ const {
   confirmDelete,
   currentAdminId,
   dataSource,
+  disableRoleSelect,
   filters,
   formDetailLoading,
   formModalOpen,
@@ -22,6 +23,7 @@ const {
   openEdit,
   pagination,
   resetFilters,
+  roleOptions,
   submitForm,
 } = useSystemAdminManage();
 </script>
@@ -46,7 +48,9 @@ const {
       v-model:open="formModalOpen"
       :current-admin-id="currentAdminId"
       :detail-loading="formDetailLoading"
+      :disable-role-select="disableRoleSelect"
       :mode="formMode"
+      :role-options="roleOptions"
       :submit-form="submitForm"
       :submitting="formSubmitting"
     />

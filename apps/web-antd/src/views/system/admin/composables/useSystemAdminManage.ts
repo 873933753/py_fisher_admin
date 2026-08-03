@@ -1,4 +1,5 @@
 import type { AdminAdminApi } from '#/api/core/admin-admin';
+import type { AdminRbacApi } from '#/api/core/admin-rbac';
 
 import { computed, onMounted, reactive, ref } from 'vue';
 
@@ -13,6 +14,9 @@ import {
   listAdminAdminsApi,
   updateAdminAdminApi,
 } from '#/api/core/admin-admin';
+import { listRbacRolesApi } from '#/api/core/admin-rbac';
+
+import { isSuperAdminRole } from '../../rbac/constants';
 
 export interface SystemAdminFilters {
   keyword: string;
@@ -71,9 +75,35 @@ export function useSystemAdminManage() {
   const formDetailLoading = ref(false);
   const formState = reactive<SystemAdminFormState>(defaultFormState());
   const originalFormState = ref<SystemAdminFormState>(defaultFormState());
+  const roleOptions = ref<AdminRbacApi.RoleItem[]>([]);
+
+  const disableRoleSelect = computed(
+    () =>
+      formMode.value === 'edit' &&
+      isCurrentAdmin(formState.id) &&
+      isSuperAdminRole(formState.role),
+  );
 
   function isCurrentAdmin(adminId: number) {
     return adminId > 0 && adminId === currentAdminId.value;
+  }
+
+  async function fetchRoleOptions() {
+    roleOptions.value = await listRbacRolesApi();
+  }
+
+  function getDefaultRoleCode() {
+    const operator = roleOptions.value.find(
+      (role) => role.code === 'operator',
+    );
+    if (operator) {
+      return operator.code;
+    }
+
+    const nonSuperAdmin = roleOptions.value.find(
+      (role) => !isSuperAdminRole(role.code),
+    );
+    return nonSuperAdmin?.code ?? roleOptions.value[0]?.code ?? '';
   }
 
   async function fetchList() {
@@ -110,9 +140,11 @@ export function useSystemAdminManage() {
     void fetchList();
   }
 
-  function openAdd() {
+  async function openAdd() {
     formMode.value = 'add';
+    await fetchRoleOptions();
     Object.assign(formState, defaultFormState());
+    formState.role = getDefaultRoleCode();
     originalFormState.value = defaultFormState();
     formModalOpen.value = true;
   }
@@ -122,6 +154,7 @@ export function useSystemAdminManage() {
     formModalOpen.value = true;
     formDetailLoading.value = true;
     try {
+      await fetchRoleOptions();
       const detail = await getAdminAdminApi(row.id);
       const nextState = detailToFormState(detail);
       Object.assign(formState, nextState);
@@ -141,18 +174,23 @@ export function useSystemAdminManage() {
         await createAdminAdminApi({
           phone_number: formState.phone_number.trim(),
           password: formState.password,
+          role: formState.role.trim(),
         });
         message.success('创建成功');
       } else {
         const payload: AdminAdminApi.UpdateParams = {};
         const phoneNumber = formState.phone_number.trim();
         const password = formState.password.trim();
+        const role = formState.role.trim();
 
         if (phoneNumber !== originalFormState.value.phone_number) {
           payload.phone_number = phoneNumber;
         }
         if (password) {
           payload.password = password;
+        }
+        if (role !== originalFormState.value.role) {
+          payload.role = role;
         }
         if (formState.is_disabled !== originalFormState.value.is_disabled) {
           payload.is_disabled = formState.is_disabled;
@@ -198,6 +236,7 @@ export function useSystemAdminManage() {
   }
 
   onMounted(() => {
+    void fetchRoleOptions();
     void fetchList();
   });
 
@@ -205,6 +244,7 @@ export function useSystemAdminManage() {
     confirmDelete,
     currentAdminId,
     dataSource,
+    disableRoleSelect,
     filters,
     formDetailLoading,
     formModalOpen,
@@ -219,6 +259,7 @@ export function useSystemAdminManage() {
     openEdit,
     pagination,
     resetFilters,
+    roleOptions,
     submitForm,
   };
 }

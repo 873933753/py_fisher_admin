@@ -4,9 +4,8 @@ import type { DataNode } from 'ant-design-vue/es/tree';
 
 import { Alert, Button, Drawer, Spin, Tree } from 'ant-design-vue';
 
-import type { MenuCheckedKeyState } from '../utils/role-menu-tree';
-
 defineProps<{
+  checkedKeys: Key[];
   loading: boolean;
   readOnly: boolean;
   roleLabel: string;
@@ -15,14 +14,15 @@ defineProps<{
 }>();
 
 const open = defineModel<boolean>('open', { default: false });
-const checkedKeys = defineModel<MenuCheckedKeyState>('checkedKeys', {
-  required: true,
-});
 const expandedKeys = defineModel<Key[]>('expandedKeys', { required: true });
 
 const emit = defineEmits<{
   check: [checked: Key[] | { checked: Key[]; halfChecked: Key[] }];
   close: [];
+  expand: [
+    expandedKeys: Key[],
+    info: { expanded: boolean; node: DataNode },
+  ];
   save: [];
 }>();
 
@@ -37,8 +37,8 @@ function handleClose() {
     v-model:open="open"
     :destroy-on-close="true"
     :mask-closable="!saving"
-    title="菜单配置"
-    width="520"
+    title="授权配置"
+    width="720"
     @close="emit('close')"
   >
     <div class="flex h-full flex-col gap-4">
@@ -50,14 +50,14 @@ function handleClose() {
         v-if="readOnly"
         show-icon
         type="info"
-        message="超级管理员菜单不可修改"
+        message="超级管理员授权不可修改"
       />
 
       <Alert
         v-else
         show-icon
         type="warning"
-        message="勾选结果将全量覆盖该角色已有菜单，不会自动补全父级目录。"
+        message="勾选菜单控制侧栏可见；子节点为接口 API，控制接口调用权限。有侧栏入口但未勾 API 时，调接口仍可能 403。"
       />
 
       <Spin :spinning="loading" class="min-h-0 flex-1">
@@ -72,6 +72,7 @@ function handleClose() {
           block-node
           show-line
           @check="(checked) => emit('check', checked)"
+          @expand="(keys, info) => emit('expand', keys, info)"
         />
         <div
           v-else-if="!loading"

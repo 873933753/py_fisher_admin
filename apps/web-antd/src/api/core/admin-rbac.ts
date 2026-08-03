@@ -7,32 +7,23 @@ export namespace AdminRbacApi {
     name: string;
   }
 
-  export interface PermissionItem {
+  export interface CreateRoleParams {
     code: string;
-    group_name: string;
-    id: number;
     name: string;
   }
 
-  export interface ListPermissionsParams {
-    group_name?: string;
+  export interface UpdateRoleParams {
+    name?: string;
   }
 
-  export interface RolePermissionsResult {
-    codes: string[];
-    role_code: string;
-  }
-
-  export interface UpdateRolePermissionsParams {
-    codes?: string[];
-  }
-
-  export interface RoleMenusResult {
+  export interface RoleAccessResult {
+    menu_api_ids: number[];
     menu_ids: number[];
     role_code: string;
   }
 
-  export interface UpdateRoleMenusParams {
+  export interface UpdateRoleAccessParams {
+    menu_api_ids?: number[];
     menu_ids?: number[];
   }
 
@@ -79,6 +70,7 @@ export namespace AdminRbacApi {
     menu_id: number;
     method: string;
     path_pattern: string;
+    remark: null | string;
     sort: number;
   }
 
@@ -90,6 +82,7 @@ export namespace AdminRbacApi {
   export interface UpdateMenuApiItem {
     method?: string;
     path_pattern: string;
+    remark?: null | string;
     sort?: number;
   }
 
@@ -103,48 +96,47 @@ export function listRbacRolesApi() {
   return requestClient.get<AdminRbacApi.RoleItem[]>('/admin/rbac/roles');
 }
 
-/** 权限列表 */
-export function listRbacPermissionsApi(
-  params?: AdminRbacApi.ListPermissionsParams,
-) {
-  return requestClient.get<AdminRbacApi.PermissionItem[]>(
-    '/admin/rbac/permissions',
-    { params },
-  );
-}
-
-/** 查询角色已绑权限 */
-export function getRolePermissionsApi(roleCode: string) {
-  return requestClient.get<AdminRbacApi.RolePermissionsResult>(
-    `/admin/rbac/roles/${roleCode}/permissions`,
-  );
-}
-
-/** 覆盖角色权限 */
-export function updateRolePermissionsApi(
-  roleCode: string,
-  data: AdminRbacApi.UpdateRolePermissionsParams,
-) {
-  return requestClient.put<AdminRbacApi.RolePermissionsResult>(
-    `/admin/rbac/roles/${roleCode}/permissions`,
+/** 创建角色 */
+export function createRoleApi(data: AdminRbacApi.CreateRoleParams) {
+  return requestClient.post<AdminRbacApi.RoleItem>(
+    '/admin/rbac/roles/create',
     data,
   );
 }
 
-/** 查询角色已绑菜单 */
-export function getRoleMenusApi(roleCode: string) {
-  return requestClient.get<AdminRbacApi.RoleMenusResult>(
-    `/admin/rbac/roles/${roleCode}/menus`,
+/** 更新角色 */
+export function updateRoleApi(
+  roleCode: string,
+  data: AdminRbacApi.UpdateRoleParams,
+) {
+  return requestClient.request<AdminRbacApi.RoleItem>(
+    `/admin/rbac/roles/update/${roleCode}`,
+    {
+      data,
+      method: 'PATCH',
+    },
   );
 }
 
-/** 覆盖角色菜单 */
-export function updateRoleMenusApi(
+/** 删除角色 */
+export function deleteRoleApi(roleCode: string) {
+  return requestClient.delete<null>(`/admin/rbac/roles/delete/${roleCode}`);
+}
+
+/** 查询角色菜单与接口授权 */
+export function getRoleAccessApi(roleCode: string) {
+  return requestClient.get<AdminRbacApi.RoleAccessResult>(
+    `/admin/rbac/roles/${roleCode}/access`,
+  );
+}
+
+/** 覆盖角色菜单与接口授权 */
+export function updateRoleAccessApi(
   roleCode: string,
-  data: AdminRbacApi.UpdateRoleMenusParams,
+  data: AdminRbacApi.UpdateRoleAccessParams,
 ) {
-  return requestClient.put<AdminRbacApi.RoleMenusResult>(
-    `/admin/rbac/roles/${roleCode}/menus`,
+  return requestClient.put<AdminRbacApi.RoleAccessResult>(
+    `/admin/rbac/roles/${roleCode}/access`,
     data,
   );
 }

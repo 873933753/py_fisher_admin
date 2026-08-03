@@ -28,12 +28,14 @@ export namespace AdminAdminApi {
   export interface CreateParams {
     password: string;
     phone_number: string;
+    role: string;
   }
 
   export interface UpdateParams {
     is_disabled?: boolean;
     password?: string;
     phone_number?: string;
+    role?: string;
   }
 }
 

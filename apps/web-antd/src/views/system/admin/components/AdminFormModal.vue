@@ -1,18 +1,22 @@
 <script lang="ts" setup>
 import type { FormInstance, Rule } from 'ant-design-vue/es/form';
 
+import type { AdminRbacApi } from '#/api/core/admin-rbac';
+
 import type { SystemAdminFormState } from '../composables/useSystemAdminManage';
 
 import { computed, ref } from 'vue';
 
-import { Form, Input, Modal, Spin, Switch } from 'ant-design-vue';
+import { Form, Input, Modal, Select, Spin, Switch } from 'ant-design-vue';
 
 import { ADMIN_PHONE_PATTERN, formatAdminRoleLabel } from '../constants';
 
 const props = defineProps<{
   currentAdminId: number;
   detailLoading?: boolean;
+  disableRoleSelect?: boolean;
   mode: 'add' | 'edit';
+  roleOptions: AdminRbacApi.RoleItem[];
   submitForm: () => Promise<void>;
   submitting: boolean;
 }>();
@@ -35,6 +39,13 @@ const disableStatusSwitch = computed(
     formState.value.id === props.currentAdminId,
 );
 
+const roleSelectOptions = computed(() =>
+  props.roleOptions.map((role) => ({
+    label: `${formatAdminRoleLabel(role.name)}（${role.code}）`,
+    value: role.code,
+  })),
+);
+
 const formRules = computed<Record<string, Rule[]>>(() => {
   const rules: Record<string, Rule[]> = {
     phone_number: [
@@ -45,6 +56,7 @@ const formRules = computed<Record<string, Rule[]>>(() => {
         trigger: 'blur',
       },
     ],
+    role: [{ required: true, message: '请选择角色', trigger: 'change' }],
   };
 
   if (props.mode === 'add') {
@@ -109,8 +121,19 @@ function handleCancel() {
             placeholder="请输入手机号"
           />
         </Form.Item>
-        <Form.Item v-if="mode === 'edit'" label="角色">
-          <Input :value="formatAdminRoleLabel(formState.role)" disabled />
+        <Form.Item label="角色" name="role">
+          <Select
+            v-model:value="formState.role"
+            :disabled="disableRoleSelect"
+            :options="roleSelectOptions"
+            placeholder="请选择角色"
+          />
+          <div
+            v-if="disableRoleSelect"
+            class="mt-2 text-xs text-muted-foreground"
+          >
+            不能修改当前登录超管的角色
+          </div>
         </Form.Item>
         <Form.Item
           :label="mode === 'add' ? '密码' : '新密码'"

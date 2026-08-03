@@ -17,5 +17,6 @@ export interface MenuApiRow {
   key: string;
   method: string;
   path_pattern: string;
+  remark: string;
   sort: number;
 }

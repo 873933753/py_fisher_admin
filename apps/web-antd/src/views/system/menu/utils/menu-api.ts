@@ -25,6 +25,7 @@ export function createMenuApiRow(
     key: `menu-api-${menuApiRowSeed}`,
     method: partial.method ?? '*',
     path_pattern: partial.path_pattern ?? '',
+    remark: partial.remark ?? '',
     sort: partial.sort ?? 0,
   };
 }
@@ -36,17 +37,22 @@ export function mapMenuApiRulesToRows(
     createMenuApiRow({
       method: api.method,
       path_pattern: api.path_pattern,
+      remark: api.remark ?? '',
       sort: api.sort,
     }),
   );
 }
 
 export function mapMenuApiRowsToPayload(rows: MenuApiRow[]) {
-  return rows.map((row) => ({
-    method: row.method,
-    path_pattern: row.path_pattern.trim(),
-    sort: row.sort,
-  }));
+  return rows.map((row) => {
+    const remark = row.remark.trim();
+    return {
+      method: row.method,
+      path_pattern: row.path_pattern.trim(),
+      sort: row.sort,
+      ...(remark ? { remark } : {}),
+    };
+  });
 }
 
 export function validateMenuApiRows(rows: MenuApiRow[]): null | string {

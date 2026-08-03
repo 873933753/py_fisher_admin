@@ -1,34 +1,35 @@
 <script lang="ts" setup>
-import RoleMenuConfigDrawer from './components/RoleMenuConfigDrawer.vue';
-import RolePermissionConfigDrawer from './components/RolePermissionConfigDrawer.vue';
+import RoleAccessConfigDrawer from './components/RoleAccessConfigDrawer.vue';
+import RoleFormModal from './components/RoleFormModal.vue';
 import RoleTablePanel from './components/RoleTablePanel.vue';
 import { useSystemRbacManage } from './composables/useSystemRbacManage';
 
 defineOptions({ name: 'SystemRbac' });
 
 const {
+  accessDrawerOpen,
+  accessLoading,
+  accessSaving,
+  accessTreeData,
   activeRoleLabel,
-  checkedCodes,
-  closeMenuDrawer,
-  closePermissionDrawer,
-  confirmSaveMenus,
-  confirmSavePermissions,
+  checkedKeys,
+  closeAccessDrawer,
+  confirmDeleteRole,
+  confirmSaveAccess,
+  expandedKeys,
+  formModalOpen,
+  formMode,
+  formState,
+  formSubmitting,
   isActiveRoleReadOnly,
-  menuCheckedKeys,
-  menuDrawerOpen,
-  menuExpandedKeys,
-  menuLoading,
-  menuSaving,
-  menuTreeData,
-  onMenuTreeCheck,
-  openMenuConfig,
-  openPermissionConfig,
-  permissionDrawerOpen,
-  permissionGroups,
-  permissionSaving,
-  permissionsLoading,
+  onAccessTreeCheck,
+  onAccessTreeExpand,
+  openAddRole,
+  openAccessConfig,
+  openEditRole,
   roles,
   rolesLoading,
+  submitRoleForm,
 } = useSystemRbacManage();
 </script>
 
@@ -37,34 +38,33 @@ const {
     <RoleTablePanel
       :loading="rolesLoading"
       :roles="roles"
-      @config-menus="openMenuConfig"
-      @config-permissions="openPermissionConfig"
+      @add="openAddRole"
+      @config-access="openAccessConfig"
+      @delete="confirmDeleteRole"
+      @edit="openEditRole"
     />
 
-    <RoleMenuConfigDrawer
-      v-model:open="menuDrawerOpen"
-      v-model:checked-keys="menuCheckedKeys"
-      v-model:expanded-keys="menuExpandedKeys"
-      :loading="menuLoading"
-      :read-only="isActiveRoleReadOnly"
-      :role-label="activeRoleLabel"
-      :saving="menuSaving"
-      :tree-data="menuTreeData"
-      @check="onMenuTreeCheck"
-      @close="closeMenuDrawer"
-      @save="confirmSaveMenus"
+    <RoleFormModal
+      v-model:form-state="formState"
+      v-model:open="formModalOpen"
+      :mode="formMode"
+      :submit-form="submitRoleForm"
+      :submitting="formSubmitting"
     />
 
-    <RolePermissionConfigDrawer
-      v-model:open="permissionDrawerOpen"
-      v-model:checked-codes="checkedCodes"
-      :loading="permissionsLoading"
-      :permission-groups="permissionGroups"
+    <RoleAccessConfigDrawer
+      v-model:open="accessDrawerOpen"
+      v-model:expanded-keys="expandedKeys"
+      :checked-keys="checkedKeys"
+      :loading="accessLoading"
       :read-only="isActiveRoleReadOnly"
       :role-label="activeRoleLabel"
-      :saving="permissionSaving"
-      @close="closePermissionDrawer"
-      @save="confirmSavePermissions"
+      :saving="accessSaving"
+      :tree-data="accessTreeData"
+      @check="onAccessTreeCheck"
+      @expand="onAccessTreeExpand"
+      @close="closeAccessDrawer"
+      @save="confirmSaveAccess"
     />
   </div>
 </template>

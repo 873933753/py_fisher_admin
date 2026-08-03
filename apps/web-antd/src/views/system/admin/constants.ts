@@ -2,6 +2,7 @@ export const ADMIN_PHONE_PATTERN = /^1[3-9]\d{9}$/;
 
 const ADMIN_ROLE_LABELS: Record<string, string> = {
   operator: '运营',
+  super_admin: '超级管理员',
 };
 
 export function formatAdminRoleLabel(role?: string): string {
