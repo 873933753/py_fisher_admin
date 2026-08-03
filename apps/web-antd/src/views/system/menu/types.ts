@@ -8,7 +8,6 @@ export interface MenuFormState {
   menu_type: AdminRbacApi.MenuTreeNode['menu_type'];
   parent_id: number | undefined;
   path: string;
-  permission_code: string;
   sort: number;
   title: string;
 }

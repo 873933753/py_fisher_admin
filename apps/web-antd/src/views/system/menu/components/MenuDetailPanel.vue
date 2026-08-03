@@ -110,9 +110,6 @@ async function handleSubmit() {
           <Form.Item label="排序">
             <InputNumber class="w-full" :value="detail.sort" disabled />
           </Form.Item>
-          <Form.Item label="权限码">
-            <Input :value="displayValue(detail.permission_code)" disabled />
-          </Form.Item>
         </Form>
         <Empty v-else description="请在左侧选择菜单节点" />
       </template>
@@ -191,16 +188,9 @@ async function handleSubmit() {
               :precision="0"
             />
           </Form.Item>
-          <Form.Item label="权限码" name="permission_code">
-            <Input
-              v-model:value="formState.permission_code"
-              allow-clear
-              placeholder="请输入权限码"
-            />
-          </Form.Item>
         </Form>
 
-        <div class="mt-4 flex gap-2">
+        <div class="mt-4 flex justify-end gap-2">
           <Button
             :loading="submitting"
             type="primary"

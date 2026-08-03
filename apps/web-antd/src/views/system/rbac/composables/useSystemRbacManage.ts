@@ -20,15 +20,17 @@ import {
 
 import { formatRoleLabel, isSuperAdminRole } from '../constants';
 import {
-  accessToCheckedKeys,
   appendMenuApis,
-  applyAccessTreeCheck,
+  applyApiCheck,
+  applyMenuCheck,
+  buildAccessPayload,
   buildRoleAccessTreeContext,
-  checkedKeysToAccessPayload,
-  collectMenuIdsForCheckCascade,
+  formatMenuKey,
+  getDefaultExpandedMenuKeys,
   getMenusNeedingApiLoad,
+  menuIdsToCheckedKeys,
   normalizeTreeCheckedKeys,
-  parseAccessKey,
+  parseMenuKey,
   type RoleAccessTreeContext,
 } from '../utils/role-access-tree';
 
@@ -54,15 +56,17 @@ export function useSystemRbacManage() {
   const formState = reactive<SystemRoleFormState>(defaultRoleFormState());
   const editingRoleCode = ref('');
 
-  const accessDrawerOpen = ref(false);
+  const accessModalOpen = ref(false);
   const activeRole = ref<AdminRbacApi.RoleItem | null>(null);
 
   const treeContext = ref<RoleAccessTreeContext | null>(null);
-  const checkedKeys = ref<Key[]>([]);
+  const checkedMenuIds = ref<Set<number>>(new Set());
+  const checkedApiIds = ref<Set<number>>(new Set());
   const expandedKeys = ref<Key[]>([]);
+  const selectedMenuId = ref<null | number>(null);
   const accessLoading = ref(false);
   const accessSaving = ref(false);
-  const menuApiLoadingIds = ref<Set<number>>(new Set());
+  const selectedMenuApiLoading = ref(false);
 
   const activeRoleCode = computed(() => activeRole.value?.code ?? '');
   const activeRoleLabel = computed(
@@ -73,6 +77,20 @@ export function useSystemRbacManage() {
   );
 
   const accessTreeData = computed(() => treeContext.value?.treeData ?? []);
+  const checkedMenuKeys = computed(() =>
+    menuIdsToCheckedKeys(checkedMenuIds.value),
+  );
+  const selectedMenuKeys = computed<Key[]>(() =>
+    selectedMenuId.value == null
+      ? []
+      : [formatMenuKey(selectedMenuId.value)],
+  );
+  const selectedMenuApis = computed(() => {
+    if (selectedMenuId.value == null || !treeContext.value) {
+      return [];
+    }
+    return treeContext.value.apisByMenu.get(selectedMenuId.value) ?? [];
+  });
 
   async function fetchRoles() {
     rolesLoading.value = true;
@@ -143,14 +161,36 @@ export function useSystemRbacManage() {
     });
   }
 
-  function resetAccessDrawerState() {
+  function resetAccessModalState() {
     treeContext.value = null;
-    checkedKeys.value = [];
+    checkedMenuIds.value = new Set();
+    checkedApiIds.value = new Set();
     expandedKeys.value = [];
-    menuApiLoadingIds.value = new Set();
+    selectedMenuId.value = null;
+    selectedMenuApiLoading.value = false;
   }
 
-  async function loadMenuApisForIds(menuIds: number[]) {
+  async function loadMenuApis(menuId: number) {
+    const ctx = treeContext.value;
+    if (!ctx) {
+      return;
+    }
+
+    const toLoad = getMenusNeedingApiLoad(ctx, [menuId]);
+    if (toLoad.length === 0) {
+      return;
+    }
+
+    selectedMenuApiLoading.value = true;
+    try {
+      const result = await getMenuApisApi(menuId);
+      appendMenuApis(ctx, result.menu_id, result.apis ?? []);
+    } finally {
+      selectedMenuApiLoading.value = false;
+    }
+  }
+
+  async function ensureMenuApisLoaded(menuIds: number[]) {
     const ctx = treeContext.value;
     if (!ctx || menuIds.length === 0) {
       return;
@@ -161,34 +201,20 @@ export function useSystemRbacManage() {
       return;
     }
 
-    const loadingSet = new Set(menuApiLoadingIds.value);
-    for (const menuId of toLoad) {
-      loadingSet.add(menuId);
-    }
-    menuApiLoadingIds.value = loadingSet;
+    const results = await Promise.all(
+      toLoad.map((menuId) => getMenuApisApi(menuId)),
+    );
 
-    try {
-      const results = await Promise.all(
-        toLoad.map((menuId) => getMenuApisApi(menuId)),
-      );
-
-      for (const result of results) {
-        appendMenuApis(ctx, result.menu_id, result.apis ?? []);
-      }
-    } finally {
-      const nextLoading = new Set(menuApiLoadingIds.value);
-      for (const menuId of toLoad) {
-        nextLoading.delete(menuId);
-      }
-      menuApiLoadingIds.value = nextLoading;
+    for (const result of results) {
+      appendMenuApis(ctx, result.menu_id, result.apis ?? []);
     }
   }
 
   async function openAccessConfig(role: AdminRbacApi.RoleItem) {
     activeRole.value = role;
-    accessDrawerOpen.value = true;
+    accessModalOpen.value = true;
     accessLoading.value = true;
-    resetAccessDrawerState();
+    resetAccessModalState();
 
     try {
       const [menuTree, roleAccess] = await Promise.all([
@@ -196,16 +222,16 @@ export function useSystemRbacManage() {
         getRoleAccessApi(role.code),
       ]);
 
-      treeContext.value = buildRoleAccessTreeContext(
+      const ctx = buildRoleAccessTreeContext(
         menuTree,
         isSuperAdminRole(role.code),
       );
-      checkedKeys.value = accessToCheckedKeys(
-        roleAccess.menu_ids ?? [],
-        roleAccess.menu_api_ids ?? [],
-      );
+      treeContext.value = ctx;
+      checkedMenuIds.value = new Set(roleAccess.menu_ids ?? []);
+      checkedApiIds.value = new Set(roleAccess.menu_api_ids ?? []);
+      expandedKeys.value = getDefaultExpandedMenuKeys(ctx);
     } catch {
-      accessDrawerOpen.value = false;
+      accessModalOpen.value = false;
       activeRole.value = null;
       throw new Error('fetch role access failed');
     } finally {
@@ -213,80 +239,89 @@ export function useSystemRbacManage() {
     }
   }
 
-  function closeAccessDrawer() {
-    accessDrawerOpen.value = false;
+  function closeAccessModal() {
+    accessModalOpen.value = false;
     activeRole.value = null;
-    resetAccessDrawerState();
+    resetAccessModalState();
   }
 
-  async function onAccessTreeExpand(
-    _expandedKeys: Key[],
-    info: { expanded: boolean; node: DataNode },
-  ) {
-    if (!info.expanded || !treeContext.value) {
+  async function onMenuSelect(selectedKeys: Key[]) {
+    const menuId = selectedKeys
+      .map((key) => parseMenuKey(key))
+      .find((id): id is number => id != null);
+
+    if (menuId == null) {
       return;
     }
 
-    const parsed = parseAccessKey(info.node.key);
-    if (!parsed || parsed.type !== 'menu') {
-      return;
-    }
-
-    await loadMenuApisForIds([parsed.id]);
+    selectedMenuId.value = menuId;
+    await loadMenuApis(menuId);
   }
 
-  async function onAccessTreeCheck(
+  async function onMenuCheck(
     checked: Key[] | { checked: Key[]; halfChecked: Key[] },
   ) {
     if (!treeContext.value || isActiveRoleReadOnly.value) {
       return;
     }
 
-    const newChecked = normalizeTreeCheckedKeys(checked);
-    const oldSet = new Set(checkedKeys.value.map(String));
-    const newSet = new Set(newChecked.map(String));
+    const ctx = treeContext.value;
+    const newCheckedKeys = normalizeTreeCheckedKeys(checked);
+    const newMenuIdSet = new Set(
+      newCheckedKeys
+        .map((key) => parseMenuKey(key))
+        .filter((id): id is number => id != null),
+    );
+    const oldMenuIdSet = checkedMenuIds.value;
 
-    let triggerKey: Key | null = null;
+    let triggerMenuId: null | number = null;
     let isChecking = false;
 
-    for (const key of newSet) {
-      if (!oldSet.has(String(key))) {
-        triggerKey = key;
+    for (const menuId of newMenuIdSet) {
+      if (!oldMenuIdSet.has(menuId)) {
+        triggerMenuId = menuId;
         isChecking = true;
         break;
       }
     }
 
-    if (!triggerKey) {
-      for (const key of checkedKeys.value) {
-        if (!newSet.has(String(key))) {
-          triggerKey = key;
+    if (triggerMenuId == null) {
+      for (const menuId of oldMenuIdSet) {
+        if (!newMenuIdSet.has(menuId)) {
+          triggerMenuId = menuId;
           isChecking = false;
           break;
         }
       }
     }
 
-    if (!triggerKey) {
-      checkedKeys.value = newChecked;
+    if (triggerMenuId == null) {
+      checkedMenuIds.value = newMenuIdSet;
       return;
     }
 
-    const parsed = parseAccessKey(triggerKey);
-    if (parsed?.type === 'menu') {
-      const menuIds = collectMenuIdsForCheckCascade(
-        treeContext.value,
-        parsed.id,
-      );
-      await loadMenuApisForIds(menuIds);
+    if (!isChecking) {
+      const descendants = ctx.menuDescendantsMap.get(triggerMenuId) ?? [];
+      await ensureMenuApisLoaded([triggerMenuId, ...descendants]);
     }
 
-    checkedKeys.value = applyAccessTreeCheck(
-      treeContext.value,
-      checkedKeys.value,
-      triggerKey,
-      isChecking,
-    );
+    const nextMenuIds = new Set(oldMenuIdSet);
+    const nextApiIds = new Set(checkedApiIds.value);
+    applyMenuCheck(ctx, nextMenuIds, nextApiIds, triggerMenuId, isChecking);
+    checkedMenuIds.value = nextMenuIds;
+    checkedApiIds.value = nextApiIds;
+  }
+
+  function onApiCheck(apiId: number, checked: boolean) {
+    if (!treeContext.value || isActiveRoleReadOnly.value) {
+      return;
+    }
+
+    const nextMenuIds = new Set(checkedMenuIds.value);
+    const nextApiIds = new Set(checkedApiIds.value);
+    applyApiCheck(treeContext.value, nextMenuIds, nextApiIds, apiId, checked);
+    checkedMenuIds.value = nextMenuIds;
+    checkedApiIds.value = nextApiIds;
   }
 
   async function saveAccess() {
@@ -296,14 +331,15 @@ export function useSystemRbacManage() {
 
     accessSaving.value = true;
     try {
-      const payload = checkedKeysToAccessPayload(checkedKeys.value);
-      const result = await updateRoleAccessApi(activeRole.value.code, payload);
-      checkedKeys.value = accessToCheckedKeys(
-        result.menu_ids ?? [],
-        result.menu_api_ids ?? [],
+      const payload = buildAccessPayload(
+        checkedMenuIds.value,
+        checkedApiIds.value,
       );
+      const result = await updateRoleAccessApi(activeRole.value.code, payload);
+      checkedMenuIds.value = new Set(result.menu_ids ?? []);
+      checkedApiIds.value = new Set(result.menu_api_ids ?? []);
       message.success('更新成功');
-      closeAccessDrawer();
+      closeAccessModal();
     } finally {
       accessSaving.value = false;
     }
@@ -330,13 +366,14 @@ export function useSystemRbacManage() {
   });
 
   return {
-    accessDrawerOpen,
     accessLoading,
+    accessModalOpen,
     accessSaving,
     accessTreeData,
     activeRoleLabel,
-    checkedKeys,
-    closeAccessDrawer,
+    checkedApiIds,
+    checkedMenuKeys,
+    closeAccessModal,
     confirmDeleteRole,
     confirmSaveAccess,
     expandedKeys,
@@ -346,14 +383,17 @@ export function useSystemRbacManage() {
     formState,
     formSubmitting,
     isActiveRoleReadOnly,
-    menuApiLoadingIds,
-    onAccessTreeCheck,
-    onAccessTreeExpand,
+    onApiCheck,
+    onMenuCheck,
+    onMenuSelect,
     openAddRole,
     openAccessConfig,
     openEditRole,
     roles,
     rolesLoading,
+    selectedMenuApiLoading,
+    selectedMenuApis,
+    selectedMenuKeys,
     submitRoleForm,
   };
 }

@@ -7,13 +7,14 @@ import { useSystemRbacManage } from './composables/useSystemRbacManage';
 defineOptions({ name: 'SystemRbac' });
 
 const {
-  accessDrawerOpen,
   accessLoading,
+  accessModalOpen,
   accessSaving,
   accessTreeData,
   activeRoleLabel,
-  checkedKeys,
-  closeAccessDrawer,
+  checkedApiIds,
+  checkedMenuKeys,
+  closeAccessModal,
   confirmDeleteRole,
   confirmSaveAccess,
   expandedKeys,
@@ -22,13 +23,17 @@ const {
   formState,
   formSubmitting,
   isActiveRoleReadOnly,
-  onAccessTreeCheck,
-  onAccessTreeExpand,
+  onApiCheck,
+  onMenuCheck,
+  onMenuSelect,
   openAddRole,
   openAccessConfig,
   openEditRole,
   roles,
   rolesLoading,
+  selectedMenuApiLoading,
+  selectedMenuApis,
+  selectedMenuKeys,
   submitRoleForm,
 } = useSystemRbacManage();
 </script>
@@ -53,17 +58,22 @@ const {
     />
 
     <RoleAccessConfigDrawer
-      v-model:open="accessDrawerOpen"
+      v-model:open="accessModalOpen"
       v-model:expanded-keys="expandedKeys"
-      :checked-keys="checkedKeys"
+      :checked-api-ids="checkedApiIds"
+      :checked-menu-keys="checkedMenuKeys"
       :loading="accessLoading"
       :read-only="isActiveRoleReadOnly"
       :role-label="activeRoleLabel"
       :saving="accessSaving"
+      :selected-menu-api-loading="selectedMenuApiLoading"
+      :selected-menu-apis="selectedMenuApis"
+      :selected-menu-keys="selectedMenuKeys"
       :tree-data="accessTreeData"
-      @check="onAccessTreeCheck"
-      @expand="onAccessTreeExpand"
-      @close="closeAccessDrawer"
+      @api-check="onApiCheck"
+      @menu-check="onMenuCheck"
+      @menu-select="onMenuSelect"
+      @close="closeAccessModal"
       @save="confirmSaveAccess"
     />
   </div>

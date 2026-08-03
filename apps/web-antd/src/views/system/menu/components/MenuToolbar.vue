@@ -3,16 +3,13 @@ import { Button } from 'ant-design-vue';
 
 defineProps<{
   canAddChild: boolean;
-  canConfigApi: boolean;
   canEditOrDelete: boolean;
-  configApiDisabledReason?: string;
   submitting: boolean;
 }>();
 
 const emit = defineEmits<{
   addChild: [];
   addTop: [];
-  configApi: [];
   delete: [];
   edit: [];
 }>();
@@ -41,13 +38,6 @@ const emit = defineEmits<{
       @click="emit('delete')"
     >
       删除
-    </Button>
-    <Button
-      :disabled="!canConfigApi || submitting"
-      :title="configApiDisabledReason"
-      @click="emit('configApi')"
-    >
-      接口配置
     </Button>
   </div>
 </template>

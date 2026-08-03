@@ -4,29 +4,18 @@ import type { DataNode } from 'ant-design-vue/es/tree';
 import type { AdminRbacApi } from '#/api/core/admin-rbac';
 
 const MENU_KEY_PREFIX = 'menu:';
-const API_KEY_PREFIX = 'api:';
 
 export function formatMenuKey(menuId: number): string {
   return `${MENU_KEY_PREFIX}${menuId}`;
 }
 
-export function formatApiKey(apiId: number): string {
-  return `${API_KEY_PREFIX}${apiId}`;
-}
-
-export function parseAccessKey(
-  key: Key,
-): { id: number; type: 'api' | 'menu' } | null {
+export function parseMenuKey(key: Key): number | null {
   const value = String(key);
-  if (value.startsWith(MENU_KEY_PREFIX)) {
-    const id = Number(value.slice(MENU_KEY_PREFIX.length));
-    return Number.isFinite(id) ? { type: 'menu', id } : null;
+  if (!value.startsWith(MENU_KEY_PREFIX)) {
+    return null;
   }
-  if (value.startsWith(API_KEY_PREFIX)) {
-    const id = Number(value.slice(API_KEY_PREFIX.length));
-    return Number.isFinite(id) ? { type: 'api', id } : null;
-  }
-  return null;
+  const id = Number(value.slice(MENU_KEY_PREFIX.length));
+  return Number.isFinite(id) ? id : null;
 }
 
 export interface RoleAccessTreeContext {
@@ -34,7 +23,6 @@ export interface RoleAccessTreeContext {
   apiRuleMap: Map<number, AdminRbacApi.MenuApiRule>;
   apisByMenu: Map<number, AdminRbacApi.MenuApiRule[]>;
   loadedMenuApiIds: Set<number>;
-  menuApisMap: Map<number, number[]>;
   menuChildrenMap: Map<number, number[]>;
   menuDescendantsMap: Map<number, number[]>;
   menuParentMap: Map<number, null | number>;
@@ -68,7 +56,7 @@ function collectMenuRelations(
   }
 }
 
-function formatApiNodeTitle(api: AdminRbacApi.MenuApiRule): string {
+export function formatApiNodeTitle(api: AdminRbacApi.MenuApiRule): string {
   const base = `${api.method} ${api.path_pattern}`;
   const remark = api.remark?.trim();
   return remark ? `${base}（${remark}）` : base;
@@ -103,45 +91,21 @@ function buildMenuDescendantsMap(
   return descendantsMap;
 }
 
-function mapMenuToAccessTreeNode(
+function mapMenuToTreeNode(
   node: AdminRbacApi.MenuTreeNode,
-  ctx: RoleAccessTreeContext,
+  readOnly: boolean,
 ): DataNode {
   const menuChildren = node.children.map((child) =>
-    mapMenuToAccessTreeNode(child, ctx),
+    mapMenuToTreeNode(child, readOnly),
   );
-  const hasMenuChildren = node.children.length > 0;
-  const apisLoaded = ctx.loadedMenuApiIds.has(node.id);
-
-  let apiChildren: DataNode[] = [];
-  if (apisLoaded) {
-    const apiIds = ctx.menuApisMap.get(node.id) ?? [];
-    apiChildren = apiIds.map((apiId) => {
-      const api = ctx.apiRuleMap.get(apiId);
-      return {
-        key: formatApiKey(apiId),
-        title: api ? formatApiNodeTitle(api) : `API ${apiId}`,
-        disableCheckbox: ctx.readOnly,
-        isLeaf: true,
-      };
-    });
-  }
-
-  const children = [...menuChildren, ...apiChildren];
-  const isLeaf =
-    !hasMenuChildren && apisLoaded && apiChildren.length === 0;
 
   return {
     key: formatMenuKey(node.id),
     title: node.title,
-    disableCheckbox: ctx.readOnly,
-    children: children.length > 0 ? children : undefined,
-    isLeaf,
+    disableCheckbox: readOnly,
+    children: menuChildren.length > 0 ? menuChildren : undefined,
+    isLeaf: menuChildren.length === 0,
   };
-}
-
-function rebuildTreeData(ctx: RoleAccessTreeContext): DataNode[] {
-  return ctx.menuTree.map((node) => mapMenuToAccessTreeNode(node, ctx));
 }
 
 export function buildRoleAccessTreeContext(
@@ -165,22 +129,18 @@ export function buildRoleAccessTreeContext(
     menuChildrenMap,
   );
 
-  const ctx: RoleAccessTreeContext = {
+  return {
     apiMenuMap: new Map(),
     apiRuleMap: new Map(),
     apisByMenu: new Map(),
     loadedMenuApiIds: new Set(),
-    menuApisMap: new Map(),
     menuChildrenMap,
     menuDescendantsMap,
     menuParentMap,
     menuTree,
     readOnly,
-    treeData: [],
+    treeData: menuTree.map((node) => mapMenuToTreeNode(node, readOnly)),
   };
-
-  ctx.treeData = rebuildTreeData(ctx);
-  return ctx;
 }
 
 export function appendMenuApis(
@@ -195,15 +155,10 @@ export function appendMenuApis(
   ctx.loadedMenuApiIds.add(menuId);
   ctx.apisByMenu.set(menuId, apis);
 
-  const apiIds = apis.map((api) => api.id);
-  ctx.menuApisMap.set(menuId, apiIds);
-
   for (const api of apis) {
     ctx.apiRuleMap.set(api.id, api);
     ctx.apiMenuMap.set(api.id, menuId);
   }
-
-  ctx.treeData = rebuildTreeData(ctx);
 }
 
 export function getMenusNeedingApiLoad(
@@ -213,162 +168,99 @@ export function getMenusNeedingApiLoad(
   return menuIds.filter((menuId) => !ctx.loadedMenuApiIds.has(menuId));
 }
 
-export function accessToCheckedKeys(
-  menuIds: number[],
-  menuApiIds: number[],
+export function getDefaultExpandedMenuKeys(
+  ctx: RoleAccessTreeContext,
 ): Key[] {
-  const keys: Key[] = menuIds.map((id) => formatMenuKey(id));
-  for (const apiId of menuApiIds) {
-    keys.push(formatApiKey(apiId));
+  const keys: Key[] = [];
+  for (const [menuId, children] of ctx.menuChildrenMap) {
+    if (children.length > 0) {
+      keys.push(formatMenuKey(menuId));
+    }
   }
   return keys;
 }
 
-export function checkedKeysToAccessPayload(checkedKeys: Key[]): {
+export function menuIdsToCheckedKeys(menuIds: Iterable<number>): Key[] {
+  return [...menuIds].map((id) => formatMenuKey(id));
+}
+
+export function buildAccessPayload(
+  checkedMenuIds: Set<number>,
+  checkedApiIds: Set<number>,
+): {
   menu_api_ids: number[];
   menu_ids: number[];
 } {
-  const menuIds: number[] = [];
-  const menuApiIds: number[] = [];
-
-  for (const key of checkedKeys) {
-    const parsed = parseAccessKey(key);
-    if (!parsed) {
-      continue;
-    }
-    if (parsed.type === 'menu') {
-      menuIds.push(parsed.id);
-    } else {
-      menuApiIds.push(parsed.id);
-    }
-  }
-
   return {
-    menu_ids: menuIds,
-    menu_api_ids: menuApiIds,
+    menu_ids: [...checkedMenuIds],
+    menu_api_ids: [...checkedApiIds],
   };
 }
 
-function checkMenuBranch(
-  checked: Set<string>,
+function collectAffectedMenuIds(
   ctx: RoleAccessTreeContext,
   menuId: number,
-) {
-  checked.add(formatMenuKey(menuId));
-
-  let parentId = ctx.menuParentMap.get(menuId);
-  while (parentId != null) {
-    checked.add(formatMenuKey(parentId));
-    parentId = ctx.menuParentMap.get(parentId);
-  }
-
+): number[] {
   const descendants = ctx.menuDescendantsMap.get(menuId) ?? [];
-  for (const descendantId of descendants) {
-    checked.add(formatMenuKey(descendantId));
-  }
+  return [menuId, ...descendants];
+}
 
-  const affectedMenuIds = [menuId, ...descendants];
-  for (const affectedMenuId of affectedMenuIds) {
-    const apiIds = ctx.menuApisMap.get(affectedMenuId) ?? [];
-    for (const apiId of apiIds) {
-      checked.add(formatApiKey(apiId));
+function removeApisForMenus(
+  checkedApiIds: Set<number>,
+  ctx: RoleAccessTreeContext,
+  menuIds: number[],
+) {
+  for (const menuId of menuIds) {
+    const apis = ctx.apisByMenu.get(menuId) ?? [];
+    for (const api of apis) {
+      checkedApiIds.delete(api.id);
     }
   }
 }
 
-function uncheckMenuBranch(
-  checked: Set<string>,
+export function applyMenuCheck(
   ctx: RoleAccessTreeContext,
+  checkedMenuIds: Set<number>,
+  checkedApiIds: Set<number>,
   menuId: number,
-) {
-  const descendants = ctx.menuDescendantsMap.get(menuId) ?? [];
-  const affectedMenuIds = [menuId, ...descendants];
+  isChecking: boolean,
+): void {
+  const affectedMenuIds = collectAffectedMenuIds(ctx, menuId);
 
-  for (const affectedMenuId of affectedMenuIds) {
-    checked.delete(formatMenuKey(affectedMenuId));
-    const apiIds = ctx.menuApisMap.get(affectedMenuId) ?? [];
-    for (const apiId of apiIds) {
-      checked.delete(formatApiKey(apiId));
+  if (isChecking) {
+    for (const id of affectedMenuIds) {
+      checkedMenuIds.add(id);
     }
-  }
-
-  uncheckAncestorsWithoutCheckedChildren(checked, ctx, menuId);
-}
-
-function uncheckAncestorsWithoutCheckedChildren(
-  checked: Set<string>,
-  ctx: RoleAccessTreeContext,
-  menuId: number,
-) {
-  const parentId = ctx.menuParentMap.get(menuId);
-  if (parentId == null) {
     return;
   }
 
-  const siblings = ctx.menuChildrenMap.get(parentId) ?? [];
-  const hasCheckedSibling = siblings.some((siblingId) =>
-    checked.has(formatMenuKey(siblingId)),
-  );
-
-  if (!hasCheckedSibling) {
-    checked.delete(formatMenuKey(parentId));
-    const apiIds = ctx.menuApisMap.get(parentId) ?? [];
-    for (const apiId of apiIds) {
-      checked.delete(formatApiKey(apiId));
-    }
-    uncheckAncestorsWithoutCheckedChildren(checked, ctx, parentId);
+  for (const id of affectedMenuIds) {
+    checkedMenuIds.delete(id);
   }
+  removeApisForMenus(checkedApiIds, ctx, affectedMenuIds);
 }
 
-export function applyAccessTreeCheck(
+export function applyApiCheck(
   ctx: RoleAccessTreeContext,
-  currentChecked: Key[],
-  triggerKey: Key,
+  checkedMenuIds: Set<number>,
+  checkedApiIds: Set<number>,
+  apiId: number,
   isChecking: boolean,
-): Key[] {
-  const parsed = parseAccessKey(triggerKey);
-  if (!parsed) {
-    return currentChecked;
+): void {
+  if (isChecking) {
+    checkedApiIds.add(apiId);
+    const menuId = ctx.apiMenuMap.get(apiId);
+    if (menuId != null) {
+      checkedMenuIds.add(menuId);
+    }
+    return;
   }
 
-  const checked = new Set(currentChecked.map(String));
-
-  if (parsed.type === 'menu') {
-    if (isChecking) {
-      checkMenuBranch(checked, ctx, parsed.id);
-    } else {
-      uncheckMenuBranch(checked, ctx, parsed.id);
-    }
-  } else if (isChecking) {
-    const menuId = ctx.apiMenuMap.get(parsed.id);
-    if (menuId == null) {
-      return currentChecked;
-    }
-
-    checked.add(formatApiKey(parsed.id));
-
-    let currentMenuId: null | number = menuId;
-    while (currentMenuId != null) {
-      checked.add(formatMenuKey(currentMenuId));
-      currentMenuId = ctx.menuParentMap.get(currentMenuId) ?? null;
-    }
-  } else {
-    checked.delete(formatApiKey(parsed.id));
-  }
-
-  return [...checked];
+  checkedApiIds.delete(apiId);
 }
 
 export function normalizeTreeCheckedKeys(
   checkedKeys: Key[] | { checked: Key[]; halfChecked: Key[] },
 ): Key[] {
   return Array.isArray(checkedKeys) ? checkedKeys : checkedKeys.checked;
-}
-
-export function collectMenuIdsForCheckCascade(
-  ctx: RoleAccessTreeContext,
-  menuId: number,
-): number[] {
-  const descendants = ctx.menuDescendantsMap.get(menuId) ?? [];
-  return [menuId, ...descendants];
 }

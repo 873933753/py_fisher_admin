@@ -34,7 +34,6 @@ export namespace AdminRbacApi {
     menu_type: 'directory' | 'menu';
     parent_id: null | number;
     path: null | string;
-    permission_code: null | string;
     sort: number;
     title: string;
   }
@@ -49,7 +48,6 @@ export namespace AdminRbacApi {
     menu_type?: 'directory' | 'menu';
     parent_id?: null | number;
     path?: null | string;
-    permission_code?: null | string;
     sort?: number;
     title: string;
   }
@@ -60,7 +58,6 @@ export namespace AdminRbacApi {
     menu_type?: 'directory' | 'menu';
     parent_id?: null | number;
     path?: null | string;
-    permission_code?: null | string;
     sort?: number;
     title?: string;
   }

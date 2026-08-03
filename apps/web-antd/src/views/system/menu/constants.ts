@@ -33,7 +33,6 @@ export function defaultMenuFormState(): MenuFormState {
     icon: '',
     sort: 0,
     menu_type: 'menu',
-    permission_code: '',
   };
 }
 
@@ -48,7 +47,6 @@ export function menuDetailToFormState(
     icon: detail.icon ?? '',
     sort: detail.sort,
     menu_type: detail.menu_type,
-    permission_code: detail.permission_code ?? '',
   };
 }
 
@@ -63,7 +61,6 @@ export function formStateToCreateParams(
     icon: form.icon.trim() || null,
     sort: form.sort,
     menu_type: form.menu_type,
-    permission_code: form.permission_code.trim() || null,
   };
 }
 
@@ -76,7 +73,6 @@ export function formStateToUpdateParams(
   const path = form.path.trim() || null;
   const component = form.component.trim() || null;
   const icon = form.icon.trim() || null;
-  const permissionCode = form.permission_code.trim() || null;
   const title = form.title.trim();
 
   if (parentId !== original.parent_id) {
@@ -99,9 +95,6 @@ export function formStateToUpdateParams(
   }
   if (form.menu_type !== original.menu_type) {
     payload.menu_type = form.menu_type;
-  }
-  if (permissionCode !== original.permission_code) {
-    payload.permission_code = permissionCode;
   }
 
   return payload;
