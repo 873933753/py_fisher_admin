@@ -5,10 +5,12 @@ import { preferences } from '@vben/preferences'
 import { useAccessStore, useUserStore } from '@vben/stores'
 import { startProgress, stopProgress } from '@vben/utils'
 
+import { getUserMenuApi } from '#/api/core/admin-rbac'
 import { accessRoutes, coreRouteNames } from '#/router/routes'
 import { useAuthStore } from '#/store'
 
 import { generateAccess } from './access'
+import { convertMenuTreeToRoutes } from './menu-to-routes'
 import { normalizeAppPath } from './path'
 
 /**
@@ -99,9 +101,12 @@ function setupAccessGuard(router: Router) {
 
       // 生成菜单和路由
       const { accessibleMenus, accessibleRoutes } = await generateAccess({
+        fetchMenuListAsync: async () => {
+          const menus = await getUserMenuApi();
+          return convertMenuTreeToRoutes(menus);
+        },
         roles: userRoles,
         router,
-        // 则会在菜单中显示，但是访问会被重定向到403
         routes: accessRoutes,
       })
 

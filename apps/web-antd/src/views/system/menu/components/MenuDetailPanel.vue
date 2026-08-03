@@ -7,6 +7,8 @@ import type { MenuFormState, PanelMode } from '../types';
 
 import { computed, ref } from 'vue';
 
+import { IconifyIcon } from '@vben/icons';
+
 import {
   Button,
   Card,
@@ -24,6 +26,12 @@ import {
   MENU_TYPE_OPTIONS,
   panelTitleByMode,
 } from '../constants';
+import {
+  MENU_ICON_OPTIONS,
+  MENU_ICON_VALUES,
+} from '../constants/menu-icons';
+import type { MenuIconOption } from '../constants/menu-icons';
+import { DEFAULT_MENU_ICON } from '#/router/route-meta';
 
 const props = defineProps<{
   detail: AdminRbacApi.MenuItem | null;
@@ -44,11 +52,30 @@ const formRef = ref<FormInstance>();
 const isEditing = computed(() => props.mode === 'add' || props.mode === 'edit');
 const showMenuPageHint = computed(() => formState.value.menu_type === 'menu');
 
+const iconOptions = computed<MenuIconOption[]>(() => {
+  const current = formState.value.icon?.trim();
+  const options = MENU_ICON_OPTIONS.map((option) => ({ ...option }));
+
+  if (current && !MENU_ICON_VALUES.has(current)) {
+    options.push({
+      label: `${current}（历史）`,
+      value: current,
+    });
+  }
+
+  return options;
+});
+
 function displayValue(value: null | number | string | undefined) {
   if (value === null || value === undefined || value === '') {
     return '—';
   }
   return String(value);
+}
+
+function resolveDisplayIcon(icon: null | string | undefined) {
+  const trimmed = icon?.trim();
+  return trimmed || DEFAULT_MENU_ICON;
 }
 
 async function handleSubmit() {
@@ -105,7 +132,13 @@ async function handleSubmit() {
             <Input :value="displayValue(detail.component)" disabled />
           </Form.Item>
           <Form.Item label="图标">
-            <Input :value="displayValue(detail.icon)" disabled />
+            <div class="flex items-center gap-2">
+              <IconifyIcon
+                :icon="resolveDisplayIcon(detail.icon)"
+                class="size-5 shrink-0"
+              />
+              <span>{{ detail.icon?.trim() || '（默认）' }}</span>
+            </div>
           </Form.Item>
           <Form.Item label="排序">
             <InputNumber class="w-full" :value="detail.sort" disabled />
@@ -174,11 +207,25 @@ async function handleSubmit() {
             </div>
           </Form.Item>
           <Form.Item label="图标" name="icon">
-            <Input
+            <Select
               v-model:value="formState.icon"
               allow-clear
-              placeholder="请输入图标标识"
-            />
+              placeholder="请选择图标（留空使用默认）"
+              :options="iconOptions"
+              option-label-prop="label"
+            >
+              <template #option="{ value, label }">
+                <div
+                  v-if="value"
+                  class="flex items-center gap-2"
+                >
+                  <IconifyIcon :icon="value" class="size-4 shrink-0" />
+                  <span>{{ label }}</span>
+                  <span class="text-xs text-muted-foreground">{{ value }}</span>
+                </div>
+                <span v-else>{{ label }}</span>
+              </template>
+            </Select>
           </Form.Item>
           <Form.Item label="排序" name="sort">
             <InputNumber

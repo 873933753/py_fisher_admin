@@ -138,6 +138,13 @@ export function updateRoleAccessApi(
   );
 }
 
+/** 当前用户菜单树（侧栏） */
+export function getUserMenuApi() {
+  return requestClient.get<AdminRbacApi.MenuTreeNode[]>(
+    '/admin/menus/userMenu',
+  );
+}
+
 /** 全量菜单树 */
 export function listMenuTreeApi() {
   return requestClient.get<AdminRbacApi.MenuTreeNode[]>(

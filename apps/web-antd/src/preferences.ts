@@ -28,7 +28,7 @@ interface WebAntdPreferencesExtension {
 export const overridesPreferences = defineOverridesPreferences({
   // overrides
   app: {
-    accessMode: 'frontend',
+    accessMode: 'mixed',
     authPageLayout: 'panel-center',
     defaultHomePath: '/workspace',
     enableCheckUpdates: false,

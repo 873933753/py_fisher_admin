@@ -1,18 +1,7 @@
 import type { RouteRecordRaw } from 'vue-router';
 
-import { $t } from '#/locales';
+// 见 router/routes/static/hidden.ts
 
-const routes: RouteRecordRaw[] = [
-  {
-    name: 'Profile',
-    path: '/profile',
-    component: () => import('#/views/_core/profile/index.vue'),
-    meta: {
-      icon: 'lucide:user',
-      hideInMenu: true,
-      title: $t('page.auth.profile'),
-    },
-  },
-];
+const routes: RouteRecordRaw[] = [];
 
 export default routes;
