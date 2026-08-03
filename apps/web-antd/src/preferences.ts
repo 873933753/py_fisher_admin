@@ -4,7 +4,7 @@ import {
 } from '@vben/preferences';
 
 /** 项目侧栏宽度（启动时会强制覆盖 localStorage 缓存值） */
-export const PROJECT_SIDEBAR_WIDTH = 160;
+export const PROJECT_SIDEBAR_WIDTH = 220;
 
 /** 项目顶栏高度（启动时会强制覆盖 localStorage 缓存值） */
 export const PROJECT_HEADER_HEIGHT = 60;
@@ -33,7 +33,8 @@ export const overridesPreferences = defineOverridesPreferences({
     defaultHomePath: '/workspace',
     enableCheckUpdates: false,
     enableCopyPreferences: false,
-    enablePreferences: false,
+    // enablePreferences: false,
+    enablePreferences: true,
     name: import.meta.env.VITE_APP_TITLE,
   },
   copyright: {
@@ -87,7 +88,8 @@ export const preferencesExtension =
     fields: [
       {
         component: 'switch',
-        defaultValue: true,
+        // defaultValue: true,
+        defaultValue: false,
         key: 'enableTopSideMenu',
         label: 'preferences.antd.fields.enableTopSideMenu.label',
         tip: 'preferences.antd.fields.enableTopSideMenu.tip',
