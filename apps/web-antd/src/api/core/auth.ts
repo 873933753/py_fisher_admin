@@ -2,13 +2,12 @@ import type { UserInfo } from '@vben/types';
 
 import { preferences } from '@vben/preferences';
 
-import { requestClient } from '#/api/request';
+import { baseRequestClient, requestClient } from '#/api/request';
 
 export namespace AuthApi {
   /** 管理员信息 */
   export interface AdminInfo {
     id: number;
-    permissions: string[];
     phone_number: string;
     role: string;
   }
@@ -23,13 +22,21 @@ export namespace AuthApi {
   export interface LoginResult {
     accessToken: string;
     adminInfo: AdminInfo;
+    refreshToken: string;
     userInfo: UserInfo;
   }
 
   /** /admin/login 返回的 data */
   export interface AdminLoginData {
+    refreshToken: string;
     token: string;
     userInfo: AdminInfo;
+  }
+
+  /** /admin/refresh 返回的 data */
+  export interface AdminRefreshData {
+    refreshToken: string;
+    token: string;
   }
 }
 
@@ -64,8 +71,36 @@ export async function loginApi(data: AuthApi.LoginParams) {
   return {
     accessToken: response.token,
     adminInfo: response.userInfo,
+    refreshToken: response.refreshToken,
     userInfo: mapAdminInfoToUserInfo(response.userInfo, response.token),
   } satisfies AuthApi.LoginResult;
+}
+
+/**
+ * 刷新访问令牌
+ */
+export async function refreshTokenApi(refreshToken: string) {
+  return baseRequestClient.post<AuthApi.AdminRefreshData>('/admin/refresh', {
+    refreshToken,
+  });
+}
+
+/**
+ * 退出登录
+ */
+export async function logoutApi(
+  accessToken: string,
+  refreshToken?: null | string,
+) {
+  return baseRequestClient.post<Record<string, never>>(
+    '/admin/logout',
+    refreshToken ? { refreshToken } : {},
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    },
+  );
 }
 
 /**

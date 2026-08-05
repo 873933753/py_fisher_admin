@@ -6,6 +6,7 @@ import type { RequestClientOptions } from '@vben/request';
 import { useAppConfig } from '@vben/hooks';
 import { preferences } from '@vben/preferences';
 import {
+  authenticateResponseInterceptor,
   defaultResponseInterceptor,
   errorMessageResponseInterceptor,
   RequestClient,
@@ -16,38 +17,35 @@ import { message } from 'ant-design-vue';
 
 const { apiURL } = useAppConfig(import.meta.env, import.meta.env.PROD);
 
-const UNAUTHORIZED_BUSINESS_CODE = 401;
-
-let handlingUnauthorized = false;
-
-function isUnauthorizedError(error: any) {
-  const responseData = error?.response?.data ?? error?.data ?? {};
-  const businessCode = responseData?.code;
-  const httpStatus = error?.response?.status ?? error?.status;
-
-  return (
-    businessCode === UNAUTHORIZED_BUSINESS_CODE ||
-    businessCode === String(UNAUTHORIZED_BUSINESS_CODE) ||
-    httpStatus === UNAUTHORIZED_BUSINESS_CODE
-  );
+/**
+ * 包装 Vben 鉴权拦截器，在每次 401 时动态读取 enableRefreshToken。
+ * request.ts 会在 initPreferences 之前被静态 import，不能直接固化该配置值。
+ */
+function createAuthenticateResponseInterceptor(options: {
+  client: RequestClient;
+  doReAuthenticate: () => Promise<void>;
+  doRefreshToken: () => Promise<string>;
+  formatToken: (token: string) => null | string;
+}) {
+  return {
+    rejected: async (error: unknown) => {
+      const interceptor = authenticateResponseInterceptor({
+        ...options,
+        enableRefreshToken: preferences.app.enableRefreshToken,
+      });
+      return interceptor.rejected?.(error);
+    },
+  };
 }
 
-async function handleUnauthorized() {
-  if (handlingUnauthorized) {
+async function handleReAuthenticate() {
+  const accessStore = useAccessStore();
+  if (preferences.app.loginExpiredMode === 'modal') {
+    accessStore.setLoginExpired(true);
     return;
   }
-  handlingUnauthorized = true;
-  try {
-    const accessStore = useAccessStore();
-    if (preferences.app.loginExpiredMode === 'modal') {
-      accessStore.setLoginExpired(true);
-      return;
-    }
-    const { useAuthStore } = await import('#/store');
-    await useAuthStore().logout();
-  } finally {
-    handlingUnauthorized = false;
-  }
+  const { useAuthStore } = await import('#/store');
+  await useAuthStore().logout();
 }
 
 function applyCommonHeaders<T extends { headers: Record<string, any> }>(
@@ -67,6 +65,13 @@ function applyCommonHeaders<T extends { headers: Record<string, any> }>(
   return config;
 }
 
+const defaultInterceptorOptions = {
+  codeField: 'code',
+  dataField: 'data',
+  successCode: (code: number | string) =>
+    code === 0 || code === 200 || code === '200',
+} as const;
+
 function createRequestClient(baseURL: string, options?: RequestClientOptions) {
   const client = new RequestClient({
     ...options,
@@ -82,33 +87,34 @@ function createRequestClient(baseURL: string, options?: RequestClientOptions) {
 
   // 处理返回的响应数据格式
   client.addResponseInterceptor(
-    defaultResponseInterceptor({
-      codeField: 'code',
-      dataField: 'data',
-      successCode: (code) => code === 0 || code === 200 || code === '200',
-    }),
+    defaultResponseInterceptor(defaultInterceptorOptions),
   );
 
-  // 业务 code 或 HTTP 401：登出 / 登录过期弹窗（须在 errorMessage 之后注册，rejected 链中优先执行）
-  client.addResponseInterceptor({
-    rejected: async (error) => {
-      if (isUnauthorizedError(error)) {
-        await handleUnauthorized();
-      }
-      throw error;
-    },
-  });
-
-  // 通用的错误处理,如果没有进入上面的错误处理逻辑，就会进入这里
+  // 通用的错误处理（须在 authenticate 之前注册，rejected 链中后执行）
   client.addResponseInterceptor(
     errorMessageResponseInterceptor((msg: string, error) => {
-      // 这里可以根据业务进行定制,你可以拿到 error 内的信息进行定制化处理，根据不同的 code 做不同的提示，而不是直接使用 message.error 提示 msg
-      // 当前mock接口返回的错误字段是 error 或者 message
+      const httpStatus = error?.response?.status ?? error?.status;
+      if (httpStatus === 401) {
+        return;
+      }
+
       const responseData = error?.response?.data ?? {};
       const errorMessage =
         responseData?.error ?? responseData?.message ?? responseData?.msg ?? '';
-      // 如果没有错误信息，则会根据状态码进行提示
       message.error(errorMessage || msg);
+    }),
+  );
+
+  // HTTP 401：静默刷新 token 并重试原请求
+  client.addResponseInterceptor(
+    createAuthenticateResponseInterceptor({
+      client,
+      formatToken: (token) => `Bearer ${token}`,
+      doRefreshToken: async () => {
+        const { useAuthStore } = await import('#/store');
+        return useAuthStore().refreshAccessToken();
+      },
+      doReAuthenticate: handleReAuthenticate,
     }),
   );
 
@@ -119,10 +125,11 @@ export const requestClient = createRequestClient(apiURL, {
   responseReturn: 'data',
 });
 
-export const baseRequestClient = new RequestClient({ baseURL: apiURL });
-
-baseRequestClient.addRequestInterceptor({
-  fulfilled: (config) => {
-    return applyCommonHeaders(config);
-  },
+export const baseRequestClient = new RequestClient({
+  baseURL: apiURL,
+  responseReturn: 'data',
 });
+
+baseRequestClient.addResponseInterceptor(
+  defaultResponseInterceptor(defaultInterceptorOptions),
+);

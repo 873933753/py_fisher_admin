@@ -10,10 +10,11 @@ import { notification } from 'ant-design-vue'
 import { defineStore } from 'pinia'
 
 import {
-  type AuthApi,
   getAdminProfileApi,
   loginApi,
+  logoutApi,
   mapAdminInfoToUserInfo,
+  refreshTokenApi,
 } from '#/api'
 import { $t } from '#/locales'
 import { normalizeAppPath } from '#/router/path'
@@ -32,10 +33,6 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  function applyAdminAccess(admin: AuthApi.AdminInfo) {
-    accessStore.setAccessCodes(admin.permissions ?? [])
-  }
-
   /**
    * 异步处理登录操作
    * Asynchronously handle the login process
@@ -45,17 +42,20 @@ export const useAuthStore = defineStore('auth', () => {
     let userInfo: null | UserInfo = null
     try {
       loginLoading.value = true
-      const { accessToken, adminInfo, userInfo: loginUserInfo } =
-        await loginApi({
-          password: params.password,
-          phone_number: params.phone_number,
-        })
+      const {
+        accessToken,
+        refreshToken,
+        userInfo: loginUserInfo,
+      } = await loginApi({
+        password: params.password,
+        phone_number: params.phone_number,
+      })
       const normalizedUserInfo = normalizeUserInfo(loginUserInfo)
 
       if (accessToken) {
         accessStore.setAccessToken(accessToken)
+        accessStore.setRefreshToken(refreshToken)
         userStore.setUserInfo(normalizedUserInfo)
-        applyAdminAccess(adminInfo)
 
         userInfo = normalizedUserInfo
 
@@ -82,7 +82,30 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  async function refreshAccessToken() {
+    const refreshToken = accessStore.refreshToken
+    if (!refreshToken) {
+      throw new Error('Refresh token is unavailable. Please login again.')
+    }
+
+    const response = await refreshTokenApi(refreshToken)
+    accessStore.setAccessToken(response.token)
+    accessStore.setRefreshToken(response.refreshToken)
+    return response.token
+  }
+
   async function logout(redirect: boolean = true) {
+    const accessToken = accessStore.accessToken
+    const refreshToken = accessStore.refreshToken
+
+    if (accessToken) {
+      try {
+        await logoutApi(accessToken, refreshToken)
+      } catch {
+        // 登出接口失败不阻塞本地清理
+      }
+    }
+
     resetAllStores()
     accessStore.setLoginExpired(false)
 
@@ -107,7 +130,6 @@ export const useAuthStore = defineStore('auth', () => {
       mapAdminInfoToUserInfo(profile, token),
     )
     userStore.setUserInfo(normalizedUserInfo)
-    applyAdminAccess(profile)
     return normalizedUserInfo
   }
 
@@ -121,5 +143,6 @@ export const useAuthStore = defineStore('auth', () => {
     fetchUserInfo,
     loginLoading,
     logout,
+    refreshAccessToken,
   }
 })

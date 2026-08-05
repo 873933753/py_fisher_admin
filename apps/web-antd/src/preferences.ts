@@ -33,6 +33,7 @@ export const overridesPreferences = defineOverridesPreferences({
     defaultHomePath: '/workspace',
     enableCheckUpdates: false,
     enableCopyPreferences: false,
+    enableRefreshToken: true,
     // enablePreferences: false,
     enablePreferences: true,
     name: import.meta.env.VITE_APP_TITLE,
