@@ -5,7 +5,7 @@ import type { AdminShopProductApi } from '#/api/core/admin-shop-products';
 
 import { computed } from 'vue';
 
-import { Button, Input, Select, Table, Tag } from 'ant-design-vue';
+import { Button, Input, Select, Switch, Table } from 'ant-design-vue';
 
 import {
   MallListFilterField,
@@ -37,7 +37,7 @@ const emit = defineEmits<{
   reset: [];
   search: [];
   tableChange: [page: number, pageSize: number];
-  toggleStatus: [row: AdminShopProductApi.Product];
+  toggleStatus: [row: AdminShopProductApi.Product, checked: boolean];
 }>();
 
 const keyword = defineModel<string>('keyword', { default: '' });
@@ -93,7 +93,7 @@ const columns: TableColumnsType<AdminShopProductApi.Product> = [
     title: '状态',
     dataIndex: 'status',
     key: 'status',
-    width: 90,
+    width: 110,
     align: 'center',
   },
   {
@@ -106,7 +106,7 @@ const columns: TableColumnsType<AdminShopProductApi.Product> = [
   {
     title: '操作',
     key: 'action',
-    width: 220,
+    width: 140,
     fixed: 'right',
     align: 'center',
   },
@@ -123,12 +123,11 @@ const tablePagination = computed<TablePaginationConfig>(() => ({
   },
 }));
 
-function formatStatus(status: AdminShopProductApi.ProductStatus) {
-  return status === SHOP_PRODUCT_STATUS_ON ? '在售' : '下架';
-}
-
-function toggleStatusLabel(status: AdminShopProductApi.ProductStatus) {
-  return status === SHOP_PRODUCT_STATUS_ON ? '下架' : '上架';
+function handleStatusChange(
+  row: AdminShopProductApi.Product,
+  checked: boolean | number | string,
+) {
+  emit('toggleStatus', row, checked === true || checked === 1);
 }
 </script>
 
@@ -186,21 +185,15 @@ function toggleStatusLabel(status: AdminShopProductApi.ProductStatus) {
             {{ formatPriceCents(record.price) }}
           </template>
           <template v-else-if="column.key === 'status'">
-            <Tag :color="record.status === SHOP_PRODUCT_STATUS_ON ? 'green' : 'default'">
-              {{ formatStatus(record.status) }}
-            </Tag>
+            <Switch
+              :checked="record.status === SHOP_PRODUCT_STATUS_ON"
+              checked-children="在售"
+              un-checked-children="下架"
+              @change="(checked) => handleStatusChange(record, checked)"
+            />
           </template>
           <template v-else-if="column.key === 'action'">
             <div class="flex justify-center gap-1">
-              <Button
-                size="small"
-                type="link"
-                @click="
-                  emit('toggleStatus', record as AdminShopProductApi.Product)
-                "
-              >
-                {{ toggleStatusLabel(record.status) }}
-              </Button>
               <Button
                 size="small"
                 type="link"

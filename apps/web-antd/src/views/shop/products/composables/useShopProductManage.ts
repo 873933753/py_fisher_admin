@@ -162,24 +162,40 @@ export function useShopProductManage() {
     });
   }
 
-  function confirmToggleStatus(row: AdminShopProductApi.Product) {
-    const nextStatus =
-      row.status === SHOP_PRODUCT_STATUS_ON
-        ? SHOP_PRODUCT_STATUS_OFF
-        : SHOP_PRODUCT_STATUS_ON;
-    const actionLabel = nextStatus === SHOP_PRODUCT_STATUS_ON ? '上架' : '下架';
+  async function applyStatusChange(
+    row: AdminShopProductApi.Product,
+    nextStatus: AdminShopProductApi.ProductStatus,
+  ) {
+    await updateShopProductApi(row.id, { status: nextStatus });
+    const actionLabel =
+      nextStatus === SHOP_PRODUCT_STATUS_ON ? '上架' : '下架';
+    message.success(`${actionLabel}成功`);
+    await fetchList();
+  }
 
-    Modal.confirm({
-      title: `确认${actionLabel}该商品？`,
-      content: `确定要将商品【${row.name}】${actionLabel}吗？`,
-      okText: actionLabel,
-      cancelText: '取消',
-      async onOk() {
-        await updateShopProductApi(row.id, { status: nextStatus });
-        message.success(`${actionLabel}成功`);
-        await fetchList();
-      },
-    });
+  function handleToggleStatus(
+    row: AdminShopProductApi.Product,
+    checked: boolean,
+  ) {
+    const nextStatus = checked
+      ? SHOP_PRODUCT_STATUS_ON
+      : SHOP_PRODUCT_STATUS_OFF;
+
+    if (nextStatus === SHOP_PRODUCT_STATUS_OFF) {
+      Modal.confirm({
+        title: '确认下架该商品？',
+        content: `确定要将商品【${row.name}】下架吗？`,
+        okText: '下架',
+        okType: 'danger',
+        cancelText: '取消',
+        async onOk() {
+          await applyStatusChange(row, nextStatus);
+        },
+      });
+      return;
+    }
+
+    void applyStatusChange(row, nextStatus);
   }
 
   onActivated(() => {
@@ -188,7 +204,7 @@ export function useShopProductManage() {
 
   return {
     confirmDelete,
-    confirmToggleStatus,
+    handleToggleStatus,
     dataSource,
     handleSearch,
     handleTableChange,

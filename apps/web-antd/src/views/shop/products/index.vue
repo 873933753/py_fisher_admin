@@ -8,7 +8,7 @@ defineOptions({ name: 'ShopProducts' });
 
 const {
   confirmDelete,
-  confirmToggleStatus,
+  handleToggleStatus,
   dataSource,
   handleSearch,
   handleTableChange,
@@ -36,7 +36,7 @@ const {
       @reset="resetFilters"
       @search="handleSearch"
       @table-change="handleTableChange"
-      @toggle-status="confirmToggleStatus"
+      @toggle-status="handleToggleStatus"
     />
   </MallListPage>
 </template>
