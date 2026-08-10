@@ -73,6 +73,39 @@ const routes: RouteRecordRaw[] = [
   {
     meta: {
       hideInMenu: true,
+      icon: 'mdi:package-variant',
+      title: '商品管理',
+    },
+    name: 'ShopProductGroup',
+    path: '/shop/products-group',
+    children: [
+      {
+        name: 'ShopProductCreate',
+        path: '/shop/products/create',
+        component: () => import('#/views/shop/products/form/index.vue'),
+        meta: {
+          activePath: '/shop/products',
+          hideInMenu: true,
+          maxNumOfOpenTab: 1,
+          title: '新增商品',
+        },
+      },
+      {
+        name: 'ShopProductEdit',
+        path: '/shop/products/edit/:id',
+        component: () => import('#/views/shop/products/form/index.vue'),
+        meta: {
+          activePath: '/shop/products',
+          hideInMenu: true,
+          maxNumOfOpenTab: 1,
+          title: '编辑商品',
+        },
+      },
+    ],
+  },
+  {
+    meta: {
+      hideInMenu: true,
       icon: 'mdi:clipboard-list-outline',
       title: $t('page.mall.orderTitle'),
     },

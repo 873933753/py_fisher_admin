@@ -5,6 +5,7 @@ export const ROUTE_META_OVERRIDES: Record<string, Partial<RouteMeta>> = {
   '/workspace': { affixTab: true },
   '/mall/product': { keepAlive: true, resetListOnMenu: true },
   '/mall/order': { keepAlive: true, resetListOnMenu: true },
+  '/shop/products': { keepAlive: true, resetListOnMenu: true },
 };
 
 export const DEFAULT_MENU_ICON = 'lucide:circle';

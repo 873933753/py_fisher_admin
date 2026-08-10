@@ -1,5 +1,6 @@
 export const MALL_ORDER_LIST_ROUTE_NAME = 'MallOrder';
 export const MALL_PRODUCT_LIST_ROUTE_NAME = 'MallProduct';
+export const SHOP_PRODUCT_LIST_ROUTE_NAME = 'ShopProducts';
 
 export type MallListKeepRestorePlan = {
   mode: 'keep';
