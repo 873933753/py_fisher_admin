@@ -107,6 +107,28 @@ const routes: RouteRecordRaw[] = [
     meta: {
       hideInMenu: true,
       icon: 'mdi:clipboard-list-outline',
+      title: '订单管理',
+    },
+    name: 'ShopOrderGroup',
+    path: '/shop/orders-group',
+    children: [
+      {
+        name: 'ShopOrderDetail',
+        path: '/shop/orders/detail/:id',
+        component: () => import('#/views/shop/orders/detail/index.vue'),
+        meta: {
+          activePath: '/shop/orders',
+          hideInMenu: true,
+          maxNumOfOpenTab: 1,
+          title: '订单详情',
+        },
+      },
+    ],
+  },
+  {
+    meta: {
+      hideInMenu: true,
+      icon: 'mdi:clipboard-list-outline',
       title: $t('page.mall.orderTitle'),
     },
     name: 'MallOrderGroup',
