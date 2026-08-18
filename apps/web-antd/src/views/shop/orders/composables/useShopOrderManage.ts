@@ -17,6 +17,7 @@ export function useShopOrderManage() {
   const router = useRouter();
 
   const userId = ref('');
+  const statusFilter = ref<'' | AdminShopOrderApi.OrderStatus>('');
   const loading = ref(false);
   const dataSource = ref<AdminShopOrderApi.OrderListItem[]>([]);
   const pagination = reactive({
@@ -56,6 +57,9 @@ export function useShopOrderManage() {
       if (parsedUserId !== undefined) {
         params.user_id = parsedUserId;
       }
+      if (statusFilter.value) {
+        params.status = statusFilter.value;
+      }
 
       const data = await listShopOrdersApi(params);
       dataSource.value = data.items ?? [];
@@ -69,6 +73,7 @@ export function useShopOrderManage() {
 
   function applyDefaultFilters() {
     userId.value = '';
+    statusFilter.value = '';
     pagination.current = 1;
   }
 
@@ -155,6 +160,7 @@ export function useShopOrderManage() {
     openDetail,
     pagination,
     resetFilters,
+    statusFilter,
     userId,
   };
 }

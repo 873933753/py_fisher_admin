@@ -7,6 +7,7 @@ export const ROUTE_META_OVERRIDES: Record<string, Partial<RouteMeta>> = {
   '/mall/order': { keepAlive: true, resetListOnMenu: true },
   '/shop/orders': { keepAlive: true, resetListOnMenu: true },
   '/shop/products': { keepAlive: true, resetListOnMenu: true },
+  '/shop/refunds': { keepAlive: true, resetListOnMenu: true },
 };
 
 export const DEFAULT_MENU_ICON = 'lucide:circle';

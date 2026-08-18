@@ -14,6 +14,7 @@ const {
   openDetail,
   pagination,
   resetFilters,
+  statusFilter,
   userId,
 } = useShopOrderManage();
 </script>
@@ -22,6 +23,7 @@ const {
   <Page title="订单列表">
     <ShopOrderListPanel
       v-model:user-id="userId"
+      v-model:status-filter="statusFilter"
       :data-source="dataSource"
       :loading="loading"
       :pagination="pagination"

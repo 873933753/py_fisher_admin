@@ -3,6 +3,7 @@ export * from './admin-audit';
 export * from './admin-rbac';
 export * from './admin-shop-orders';
 export * from './admin-shop-products';
+export * from './admin-shop-refunds';
 export * from './admin-upload';
 export * from './admin-user';
 export * from './auth';

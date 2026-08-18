@@ -10,7 +10,10 @@ import { Page } from '@vben/common-ui';
 import { Button, Descriptions, DescriptionsItem, Spin, Table, Tag } from 'ant-design-vue';
 
 import ShopProductCoverCell from '#/views/shop/products/components/ShopProductCoverCell.vue';
-import { formatPriceCents } from '#/views/shop/products/utils/price';
+import {
+  formatEmptyText,
+  formatPriceYuan,
+} from '#/views/shop/products/utils/price';
 
 import {
   getShopOrderStatusLabel,
@@ -82,6 +85,12 @@ const itemList = computed(() => detail.value?.items ?? []);
           <DescriptionsItem label="订单 ID">
             {{ detail.id }}
           </DescriptionsItem>
+          <DescriptionsItem label="订单号">
+            {{ detail.order_no }}
+          </DescriptionsItem>
+          <DescriptionsItem label="交易单号">
+            {{ formatEmptyText(detail.out_trade_no) }}
+          </DescriptionsItem>
           <DescriptionsItem label="用户 ID">
             {{ detail.user_id }}
           </DescriptionsItem>
@@ -91,10 +100,19 @@ const itemList = computed(() => detail.value?.items ?? []);
             </Tag>
           </DescriptionsItem>
           <DescriptionsItem label="总金额">
-            {{ formatPriceCents(detail.total_amount) }}
+            {{ formatPriceYuan(detail.total_amount) }}
           </DescriptionsItem>
-          <DescriptionsItem label="下单时间" :span="2">
+          <DescriptionsItem label="支付金额">
+            {{ formatPriceYuan(detail.paid_amount) }}
+          </DescriptionsItem>
+          <DescriptionsItem label="支付时间">
+            {{ formatEmptyText(detail.paid_at) }}
+          </DescriptionsItem>
+          <DescriptionsItem label="下单时间">
             {{ detail.create_time }}
+          </DescriptionsItem>
+          <DescriptionsItem label="支付截止时间">
+            {{ detail.expire_at }}
           </DescriptionsItem>
         </Descriptions>
 
@@ -113,10 +131,10 @@ const itemList = computed(() => detail.value?.items ?? []);
                 <ShopProductCoverCell :src="record.product_cover" />
               </template>
               <template v-else-if="column.key === 'price'">
-                {{ formatPriceCents(record.price) }}
+                {{ formatPriceYuan(record.price) }}
               </template>
               <template v-else-if="column.key === 'line_amount'">
-                {{ formatPriceCents(record.line_amount) }}
+                {{ formatPriceYuan(record.line_amount) }}
               </template>
             </template>
           </Table>

@@ -1,19 +1,24 @@
 import { requestClient } from '#/api/request';
 
 export namespace AdminShopOrderApi {
-  export type OrderStatus = 1;
+  export type OrderStatus = 1 | 2 | 3 | 4 | 5;
 
   export interface OrderListItem {
     create_time: string;
+    expire_at: string;
     id: number;
+    order_no: string;
+    out_trade_no: string;
+    paid_amount: string;
+    paid_at: string;
     status: OrderStatus;
-    total_amount: number;
+    total_amount: string;
     user_id: number;
   }
 
   export interface OrderItem {
-    line_amount: number;
-    price: number;
+    line_amount: string;
+    price: string;
     product_cover: string;
     product_id: number;
     product_name: string;
@@ -27,6 +32,7 @@ export namespace AdminShopOrderApi {
   export interface ListParams {
     page?: number;
     size?: number;
+    status?: OrderStatus;
     user_id?: number;
   }
 
